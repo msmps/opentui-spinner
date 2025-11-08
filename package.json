@@ -1,0 +1,63 @@
+{
+  "name": "opentui-spinner",
+  "version": "1.0.0",
+  "description": "A small & opinionated spinner library",
+  "author": "Matt Simpson",
+  "license": "MIT",
+  "repository": "msmps/opentui-spinner",
+  "type": "module",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react.d.mts",
+        "default": "./dist/react.mjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "opentui",
+    "spinner",
+    "cli",
+    "terminal",
+    "console",
+    "tui"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.4",
+    "@types/bun": "latest",
+    "tsdown": "^0.16.0"
+  },
+  "peerDependencies": {
+    "@opentui/core": "^0.1.39",
+    "@opentui/react": "^0.1.39",
+    "react": "^19.1.1",
+    "typescript": "^5"
+  },
+  "peerDependenciesMeta": {
+    "@opentui/react": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "cli-spinners": "^3.3.0"
+  }
+}
