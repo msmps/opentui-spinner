@@ -1,10 +1,13 @@
 {
   "name": "opentui-spinner",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A small & opinionated spinner library",
   "author": "Matt Simpson",
   "license": "MIT",
-  "repository": "msmps/opentui-spinner",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/msmps/opentui-spinner.git"
+  },
   "type": "module",
   "module": "dist/index.mjs",
   "types": "dist/index.d.mts",
