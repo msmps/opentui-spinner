@@ -20,6 +20,12 @@
         "types": "./dist/react.d.mts",
         "default": "./dist/react.mjs"
       }
+    },
+    "./solid": {
+      "import": {
+        "types": "./dist/solid.d.mts",
+        "default": "./dist/solid.mjs"
+      }
     }
   },
   "files": [
@@ -46,14 +52,14 @@
   "peerDependencies": {
     "@opentui/core": "^0.1.39",
     "@opentui/react": "^0.1.39",
-    "react": "^19.1.1",
+    "@opentui/solid": "^0.1.39",
     "typescript": "^5"
   },
   "peerDependenciesMeta": {
     "@opentui/react": {
       "optional": true
     },
-    "react": {
+    "@opentui/solid": {
       "optional": true
     }
   },

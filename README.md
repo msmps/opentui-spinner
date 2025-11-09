@@ -7,6 +7,7 @@ A small & opinionated spinner library for terminal UIs built on [OpenTUI](https:
 - **Built-in Spinners** - Powered by [cli-spinners](https://github.com/sindresorhus/cli-spinners)
 - **Custom Spinners** - Create your own with custom frames and intervals
 - **React Support** - First-class React integration via OpenTUI React
+- **SolidJS Support** - First-class SolidJS integration via OpenTUI Solid
 - **Type-Safe** - Full TypeScript support
 
 ## Installation
@@ -19,6 +20,12 @@ For React support:
 
 ```bash
 bun add opentui-spinner @opentui/core @opentui/react react
+```
+
+For SolidJS support:
+
+```bash
+bun add opentui-spinner @opentui/core @opentui/solid solid-js
 ```
 
 ## Usage
@@ -100,6 +107,52 @@ function App() {
 
 const renderer = await createCliRenderer();
 createRoot(renderer).render(<App />);
+```
+
+### SolidJS Usage
+
+First, import the SolidJS extension:
+
+```tsx
+import "opentui-spinner/solid";
+```
+
+Then use the `<spinner>` component in your OpenTUI SolidJS app:
+
+```tsx
+import { createCliRenderer } from "@opentui/core";
+import { createRoot } from "@opentui/solid";
+import { createSignal, onCleanup } from "solid-js";
+import "opentui-spinner/solid";
+
+const loadingSteps = [
+  "Initializing...",
+  "Loading dependencies...",
+  "Loading configuration...",
+  "Loading data...",
+  "Processing data...",
+  "Done!",
+];
+
+function App() {
+  const [step, setCurrentStep] = createSignal<number>(0);
+
+  const interval = setInterval(() => {
+    setCurrentStep((prev) => (prev + 1) % loadingSteps.length);
+  }, 1000);
+
+  onCleanup(() => clearInterval(interval));
+
+  return (
+    <box alignItems="center" flexDirection="row">
+      <spinner name="dots" color="cyan" />
+      <text marginLeft={1}> {loadingSteps[step()]}</text>
+    </box>
+  );
+}
+
+const renderer = await createCliRenderer();
+createRoot(renderer).render(() => <App />);
 ```
 
 ## API Reference
@@ -218,11 +271,13 @@ Check out the `examples/` directory for complete working examples:
 
 - [`examples/index.ts`](examples/index.ts) - Core example
 - [`examples/react.tsx`](examples/react.tsx) - React example
+- [`examples/solid.tsx`](examples/solid.tsx) - SolidJS example
 
 ## Peer Dependencies
 
 - `@opentui/core` (required)
 - `@opentui/react` (optional, for React support)
+- `@opentui/solid` (optional, for SolidJS support)
 
 ## Development
 

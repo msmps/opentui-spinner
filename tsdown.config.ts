@@ -1,9 +1,9 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["./src/index.ts", "./src/react.tsx"],
   dts: true,
+  entry: ["./src/index.ts", "./src/react.ts", "./src/solid.ts"],
+  external: ["@opentui/core", "@opentui/react", "@opentui/solid"],
   format: ["esm"],
-  external: ["@opentui/core", "@opentui/react"],
   minify: true,
 });
