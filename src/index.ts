@@ -26,6 +26,7 @@ export interface SpinnerOptions
   loop?: boolean;
   backgroundColor?: ColorInput;
   color?: ColorInput;
+  colors?: ColorInput[][];
 }
 
 export class SpinnerRenderable extends Renderable {
@@ -35,6 +36,7 @@ export class SpinnerRenderable extends Renderable {
   private _currentFrameIndex: number = 0;
   private _backgroundColor: ColorInput;
   private _color: ColorInput;
+  private _colors: ColorInput[][];
   private _timeline: Timeline;
 
   protected _defaultOptions = {
@@ -45,6 +47,7 @@ export class SpinnerRenderable extends Renderable {
     loop: true,
     color: "white",
     backgroundColor: "transparent",
+    colors: [["white"]],
   } satisfies SpinnerOptions;
 
   constructor(ctx: RenderContext, options: SpinnerOptions) {
@@ -53,12 +56,13 @@ export class SpinnerRenderable extends Renderable {
     this._name = options.name;
     this._frames = this._name
       ? spinners[this._name].frames
-      : (options.frames ?? this._defaultOptions.frames);
+      : options.frames ?? this._defaultOptions.frames;
     this._interval = this._name
       ? spinners[this._name].interval
-      : (options.interval ?? this._defaultOptions.interval);
+      : options.interval ?? this._defaultOptions.interval;
 
     this._color = options.color ?? this._defaultOptions.color;
+    this._colors = options.colors ?? this._defaultOptions.colors;
     this._backgroundColor =
       options.backgroundColor ?? this._defaultOptions.backgroundColor;
 
@@ -83,7 +87,7 @@ export class SpinnerRenderable extends Renderable {
       {
         time: this._interval * this._frames.length,
         duration: this._interval * this._frames.length,
-        ease: "linear",
+        ease: "linear", // TODO: Ensure easing is actually working as expected...
         onUpdate: (anim) => {
           const currentTime = anim.currentTime;
           const cycleDuration = this._interval * this._frames.length;
@@ -94,7 +98,7 @@ export class SpinnerRenderable extends Renderable {
 
           const expectedFrameIndex = Math.min(
             Math.floor(cycleTime / this._interval),
-            this._frames.length - 1,
+            this._frames.length - 1
           );
 
           if (expectedFrameIndex !== this._currentFrameIndex) {
@@ -103,7 +107,7 @@ export class SpinnerRenderable extends Renderable {
           }
         },
       },
-      0,
+      0
     );
   }
 
@@ -185,15 +189,26 @@ export class SpinnerRenderable extends Renderable {
     const currentFrame = this._frames[this._currentFrameIndex];
     if (!currentFrame) return;
 
+    const encoded = buffer.encodeUnicode(currentFrame); // TODO: Encode on construction instead of every render...
+    if (!encoded) return;
+
     // Center the current frame within the fixed width of the renderable
     const xOffset = Math.floor((this.width - currentFrame.length) / 2);
-    buffer.drawText(
-      currentFrame,
-      this.x + xOffset,
-      this.y,
-      parseColor(this._color),
-      parseColor(this._backgroundColor),
-    );
+
+    let x = this.x + xOffset;
+
+    for (let i = 0; i < encoded.data.length; i++) {
+      buffer.drawChar(
+        encoded.data[i].char,
+        x,
+        this.y,
+        parseColor(this._colors[this._currentFrameIndex]?.[i] ?? this._color),
+        parseColor(this._backgroundColor)
+      );
+      x += encoded.data[i].width;
+    }
+
+    buffer.freeUnicode(encoded);
   }
 
   protected override destroySelf(): void {
