@@ -62,10 +62,10 @@ export class SpinnerRenderable extends Renderable {
     this._name = options.name;
     this._frames = this._name
       ? spinners[this._name].frames
-      : options.frames ?? this._defaultOptions.frames;
+      : (options.frames ?? this._defaultOptions.frames);
     this._interval = this._name
       ? spinners[this._name].interval
-      : options.interval ?? this._defaultOptions.interval;
+      : (options.interval ?? this._defaultOptions.interval);
     this._autoplay = options.autoplay ?? this._defaultOptions.autoplay;
     this._backgroundColor =
       options.backgroundColor ?? this._defaultOptions.backgroundColor;
@@ -199,7 +199,7 @@ export class SpinnerRenderable extends Renderable {
               this._currentFrameIndex,
               i,
               this._frames.length,
-              encodedFrame.data.length
+              encodedFrame.data.length,
             )
           : this._color;
 
@@ -208,7 +208,7 @@ export class SpinnerRenderable extends Renderable {
         x,
         this.y,
         parseColor(color),
-        parseColor(this._backgroundColor)
+        parseColor(this._backgroundColor),
       );
       x += encodedFrame.data[i].width;
     }

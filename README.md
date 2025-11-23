@@ -1,5 +1,10 @@
 # opentui-spinner
 
+<div align="center">
+    <a href="https://www.npmjs.com/package/opentui-spinner"><img alt="npm" src="https://img.shields.io/npm/v/opentui-spinner?style=flat-square" /></a>
+    <a href="https://github.com/msmps/awesome-opentui"><img alt="awesome opentui list" src="https://awesome.re/mentioned-badge-flat.svg" /></a>
+</div>
+
 A small & opinionated spinner library for terminal UIs built on [OpenTUI](https://github.com/sst/opentui).
 
 ## Features
@@ -37,7 +42,6 @@ import { createCliRenderer } from "@opentui/core";
 import { SpinnerRenderable } from "opentui-spinner";
 
 const renderer = await createCliRenderer();
-engine.attach(renderer);
 
 const spinner = new SpinnerRenderable(renderer, {
   name: "dots",
@@ -53,13 +57,11 @@ renderer.root.add(spinner);
 import {
   BoxRenderable,
   createCliRenderer,
-  engine,
   TextRenderable,
 } from "@opentui/core";
 import { SpinnerRenderable } from "opentui-spinner";
 
 const renderer = await createCliRenderer();
-engine.attach(renderer);
 
 const container = new BoxRenderable(renderer, {
   border: true,
@@ -159,15 +161,14 @@ createRoot(renderer).render(() => <App />);
 
 ### SpinnerOptions
 
-| Option            | Type          | Default         | Description                                  |
-| ----------------- | ------------- | --------------- | -------------------------------------------- |
-| `name`            | `SpinnerName` | `"dots"`        | Name of a built-in spinner from cli-spinners |
-| `frames`          | `string[]`    | -               | Custom animation frames (overrides `name`)   |
-| `interval`        | `number`      | -               | Time between frames in milliseconds          |
-| `autoplay`        | `boolean`     | `true`          | Whether to start playing automatically       |
-| `loop`            | `boolean`     | `true`          | Whether to loop the animation                |
-| `color`           | `ColorInput`  | `"white"`       | Foreground color                             |
-| `backgroundColor` | `ColorInput`  | `"transparent"` | Background color                             |
+| Option            | Type                           | Default         | Description                                  |
+| ----------------- | ------------------------------ | --------------- | -------------------------------------------- |
+| `name`            | `SpinnerName`                  | `"dots"`        | Name of a built-in spinner from cli-spinners |
+| `frames`          | `string[]`                     | -               | Custom animation frames (overrides `name`)   |
+| `interval`        | `number`                       | -               | Time between frames in milliseconds          |
+| `autoplay`        | `boolean`                      | `true`          | Whether to start playing automatically       |
+| `color`           | `ColorInput \| ColorGenerator` | `"white"`       | Foreground color or color generator function |
+| `backgroundColor` | `ColorInput`                   | `"transparent"` | Background color                             |
 
 ### SpinnerRenderable Methods
 
@@ -197,6 +198,12 @@ spinner.name = "line";
 
 // Update color
 spinner.color = "green";
+
+// Or use a color generator
+spinner.color = createPulse(["red", "yellow", "green"]);
+
+// Update background color
+spinner.backgroundColor = "blue";
 
 // Change frames
 spinner.frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -264,6 +271,67 @@ spinner.color = { r: 255, g: 100, b: 50 };
 // Hex colors
 spinner.color = "#ff6432";
 ```
+
+### Dynamic Color Effects
+
+The `color` property also accepts a `ColorGenerator` function for dynamic color effects:
+
+```typescript
+import { SpinnerRenderable, type ColorGenerator } from "opentui-spinner";
+
+// Custom color generator
+const customColorGen: ColorGenerator = (
+  frameIndex,
+  charIndex,
+  totalFrames,
+  totalChars
+) => {
+  // Return different colors based on frame/character position
+  return frameIndex % 2 === 0 ? "cyan" : "magenta";
+};
+
+const spinner = new SpinnerRenderable(renderer, {
+  name: "dots",
+  color: customColorGen,
+});
+```
+
+### Built-in Color Generators
+
+#### `createPulse(colors, speed?)`
+
+Creates a pulsing effect that cycles through colors:
+
+```typescript
+import { SpinnerRenderable, createPulse } from "opentui-spinner";
+
+const spinner = new SpinnerRenderable(renderer, {
+  name: "dots",
+  color: createPulse(["red", "orange", "yellow"], 0.5),
+});
+```
+
+**Parameters:**
+
+- `colors`: Array of colors to cycle through
+- `speed`: Animation speed multiplier (default: 1.0)
+
+#### `createWave(colors)`
+
+Creates a wave pattern that moves across characters:
+
+```typescript
+import { SpinnerRenderable, createWave } from "opentui-spinner";
+
+const spinner = new SpinnerRenderable(renderer, {
+  name: "dots",
+  color: createWave(["#ff0000", "#00ff00", "#0000ff"]),
+});
+```
+
+**Parameters:**
+
+- `colors`: Array of colors for the wave gradient
 
 ## Examples
 
