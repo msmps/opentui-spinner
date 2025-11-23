@@ -107,8 +107,9 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public set interval(value: number) {
+    this.stop();
     this._interval = value;
-    this.requestRender();
+    this.start();
   }
 
   public get name(): SpinnerName | undefined {
