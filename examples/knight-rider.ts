@@ -120,7 +120,7 @@ function createKnightRiderTrail(
 }
 
 // Configuration for the Knight Rider scanner
-const width = 10;
+const width = 8;
 const char = "■"; // Block character simulating an LED segment
 const pattern = char.repeat(width);
 
@@ -140,14 +140,14 @@ const spinner = new SpinnerRenderable(renderer, {
   color: createKnightRiderTrail({
     colors: [
       "#ff0000", // Brightest Red (Center)
-      "#ff3333", // Glare/Bloom
-      "#cc0000", // Trail 1
-      "#990000", // Trail 2
-      "#660000", // Trail 3
-      "#330000", // Trail 4
+      "#ff5555", // Glare/Bloom
+      "#dd0000", // Trail 1
+      "#aa0000", // Trail 2
+      "#770000", // Trail 3
+      "#440000", // Trail 4
     ],
     trailLength: 6,
-    defaultColor: "#1a1a1a", // Unlit segments (dark gray)
+    defaultColor: "#111111", // Unlit segments (dark gray)
     direction: "bidirectional",
     holdFrames: { start: holdStart, end: holdEnd },
   }),
