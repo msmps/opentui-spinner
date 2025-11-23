@@ -244,7 +244,7 @@ const trailOptions = {
     RGBA.fromHex("#440000"), // Trail 4
   ],
   trailLength: 6,
-  defaultColor: RGBA.fromHex("#220000"), // Unlit segments (dark red)
+  defaultColor: RGBA.fromHex("#330000"), // Unlit segments (dark red)
   direction: "bidirectional" as const,
   holdFrames: { start: holdStart, end: holdEnd },
 };
