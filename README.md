@@ -101,7 +101,7 @@ import "opentui-spinner/react";
 function App() {
   return (
     <box alignItems="center" flexDirection="row">
-      <spinner name="dots" color="cyan" />
+      <spinner name="bouncingBall" color="cyan" />
       <text marginLeft={1}>Loading...</text>
     </box>
   );
@@ -122,39 +122,19 @@ import "opentui-spinner/solid";
 Then use the `<spinner>` component in your OpenTUI SolidJS app:
 
 ```tsx
-import { createCliRenderer } from "@opentui/core";
-import { createRoot } from "@opentui/solid";
-import { createSignal, onCleanup } from "solid-js";
+import { render } from "@opentui/solid";
 import "opentui-spinner/solid";
 
-const loadingSteps = [
-  "Initializing...",
-  "Loading dependencies...",
-  "Loading configuration...",
-  "Loading data...",
-  "Processing data...",
-  "Done!",
-];
-
 function App() {
-  const [step, setCurrentStep] = createSignal<number>(0);
-
-  const interval = setInterval(() => {
-    setCurrentStep((prev) => (prev + 1) % loadingSteps.length);
-  }, 1000);
-
-  onCleanup(() => clearInterval(interval));
-
   return (
     <box alignItems="center" flexDirection="row">
-      <spinner name="dots" color="cyan" />
-      <text marginLeft={1}> {loadingSteps[step()]}</text>
+      <spinner name="bouncingBall" color="cyan" />
+      <text marginLeft={1}>Loading...</text>
     </box>
   );
 }
 
-const renderer = await createCliRenderer();
-createRoot(renderer).render(() => <App />);
+render(() => <App />);
 ```
 
 ## API Reference
