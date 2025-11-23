@@ -1,16 +1,17 @@
 import {
   type ColorInput,
-  createTimeline,
   type LayoutOptions,
   type OptimizedBuffer,
   parseColor,
   Renderable,
   type RenderableOptions,
   type RenderContext,
-  type Timeline,
+  type RenderLib,
+  resolveRenderLib,
 } from "@opentui/core";
 
 import spinners from "cli-spinners";
+import type { ColorGenerator } from "./utils";
 
 type SpinnerName = keyof typeof spinners;
 
@@ -23,31 +24,37 @@ export interface SpinnerOptions
   frames?: string[];
   interval?: number;
   autoplay?: boolean;
-  loop?: boolean;
   backgroundColor?: ColorInput;
-  color?: ColorInput;
-  colors?: ColorInput[][];
+  color?: ColorInput | ColorGenerator;
 }
 
 export class SpinnerRenderable extends Renderable {
+  // Configurable properties
   private _name: SpinnerName | undefined;
   private _frames: string[];
   private _interval: number;
-  private _currentFrameIndex: number = 0;
+  private _autoplay: boolean;
   private _backgroundColor: ColorInput;
-  private _color: ColorInput;
-  private _colors: ColorInput[][];
-  private _timeline: Timeline;
+  private _color: ColorInput | ColorGenerator;
+
+  // Internals
+  private _currentFrameIndex: number = 0;
+  private _encodedFrames: Record<
+    string,
+    ReturnType<typeof OptimizedBuffer.prototype.encodeUnicode>
+  > = {};
+
+  private _lib: RenderLib = resolveRenderLib();
+  private _lastRenderTime: number = 0;
+  private _intervalId: NodeJS.Timeout | null = null;
 
   protected _defaultOptions = {
     name: "dots",
     frames: spinners.dots.frames,
     interval: spinners.dots.interval,
     autoplay: true,
-    loop: true,
-    color: "white",
     backgroundColor: "transparent",
-    colors: [["white"]],
+    color: "white",
   } satisfies SpinnerOptions;
 
   constructor(ctx: RenderContext, options: SpinnerOptions) {
@@ -56,59 +63,43 @@ export class SpinnerRenderable extends Renderable {
     this._name = options.name;
     this._frames = this._name
       ? spinners[this._name].frames
-      : options.frames ?? this._defaultOptions.frames;
+      : (options.frames ?? this._defaultOptions.frames);
     this._interval = this._name
       ? spinners[this._name].interval
-      : options.interval ?? this._defaultOptions.interval;
-
-    this._color = options.color ?? this._defaultOptions.color;
-    this._colors = options.colors ?? this._defaultOptions.colors;
+      : (options.interval ?? this._defaultOptions.interval);
+    this._autoplay = options.autoplay ?? this._defaultOptions.autoplay;
     this._backgroundColor =
       options.backgroundColor ?? this._defaultOptions.backgroundColor;
+    this._color = options.color ?? this._defaultOptions.color;
 
     // Calculate max frame width and set dimensions
     const maxFrameWidth = Math.max(...this._frames.map((f) => f.length));
     this.width = maxFrameWidth;
     this.height = 1;
 
-    const autoplay = options.autoplay ?? this._defaultOptions.autoplay;
-    const loop = options.loop ?? this._defaultOptions.loop;
+    // Pre-encode frames (move this to a function and call in setter)
+    this._encodeFrames();
 
-    this._timeline = createTimeline({
-      loop,
-      autoplay,
-      duration: this._interval * this._frames.length,
-    });
+    if (this._autoplay) {
+      this.start();
+    }
+  }
 
-    this._timeline.add(
-      {
-        time: 0,
-      },
-      {
-        time: this._interval * this._frames.length,
-        duration: this._interval * this._frames.length,
-        ease: "linear", // TODO: Ensure easing is actually working as expected...
-        onUpdate: (anim) => {
-          const currentTime = anim.currentTime;
-          const cycleDuration = this._interval * this._frames.length;
+  private _encodeFrames(): void {
+    for (const frame of this._frames) {
+      const encoded = this._lib.encodeUnicode(frame, this.ctx.widthMethod);
+      if (encoded) {
+        this._encodedFrames[frame] = encoded;
+      }
+    }
+  }
 
-          // Use modulo to get time within current cycle (handles looping automatically)
-          // Add a small epsilon to handle edge cases at cycle boundaries
-          const cycleTime = (currentTime % cycleDuration) + 0.001;
-
-          const expectedFrameIndex = Math.min(
-            Math.floor(cycleTime / this._interval),
-            this._frames.length - 1
-          );
-
-          if (expectedFrameIndex !== this._currentFrameIndex) {
-            this._currentFrameIndex = expectedFrameIndex;
-            this.requestRender();
-          }
-        },
-      },
-      0
-    );
+  private _freeFrames(): void {
+    for (const frame in this._encodedFrames) {
+      if (this._encodedFrames[frame]) {
+        this._lib.freeUnicode(this._encodedFrames[frame]);
+      }
+    }
   }
 
   public get interval(): number {
@@ -117,7 +108,6 @@ export class SpinnerRenderable extends Renderable {
 
   public set interval(value: number) {
     this._interval = value;
-    this._timeline.duration = this._interval * this._frames.length;
     this.requestRender();
   }
 
@@ -133,7 +123,6 @@ export class SpinnerRenderable extends Renderable {
     this._interval = this._name
       ? spinners[this._name].interval
       : this._defaultOptions.interval;
-    this._timeline.duration = this._interval * this._frames.length;
 
     // Update width based on new frames
     const maxFrameWidth = Math.max(...this._frames.map((f) => f.length));
@@ -147,8 +136,9 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public set frames(value: string[]) {
+    this._freeFrames();
     this._frames = value.length === 0 ? this._defaultOptions.frames : value;
-    this._timeline.duration = this._interval * this._frames.length;
+    this._encodeFrames();
 
     // Update width based on new frames
     const maxFrameWidth = Math.max(...this._frames.map((f) => f.length));
@@ -157,11 +147,11 @@ export class SpinnerRenderable extends Renderable {
     this.requestRender();
   }
 
-  public get color(): ColorInput {
+  public get color(): ColorInput | ColorGenerator {
     return this._color;
   }
 
-  public set color(value: ColorInput) {
+  public set color(value: ColorInput | ColorGenerator) {
     this._color = value;
     this.requestRender();
   }
@@ -176,43 +166,62 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public start(): void {
-    this._timeline.play();
+    this._intervalId = setInterval(() => {
+      this.requestRender();
+    }, this._interval);
   }
 
   public stop(): void {
-    this._timeline.pause();
+    if (this._intervalId) {
+      clearInterval(this._intervalId);
+      this._intervalId = null;
+    }
   }
 
   protected override renderSelf(buffer: OptimizedBuffer): void {
     if (!this.visible) return;
 
+    const now = Date.now();
+    if (now - this._lastRenderTime >= this._interval) {
+      this._currentFrameIndex =
+        (this._currentFrameIndex + 1) % this._frames.length;
+      this._lastRenderTime = now;
+    }
+
     const currentFrame = this._frames[this._currentFrameIndex];
     if (!currentFrame) return;
 
-    const encoded = buffer.encodeUnicode(currentFrame); // TODO: Encode on construction instead of every render...
-    if (!encoded) return;
+    const encodedFrame = this._encodedFrames[currentFrame];
+    if (!encodedFrame) return;
 
-    // Center the current frame within the fixed width of the renderable
-    const xOffset = Math.floor((this.width - currentFrame.length) / 2);
+    let x = this.x;
+    for (let i = 0; i < encodedFrame.data.length; i++) {
+      const color =
+        typeof this._color === "function"
+          ? this._color(
+              this._currentFrameIndex,
+              i,
+              this._frames.length,
+              encodedFrame.data.length,
+            )
+          : this._color;
 
-    let x = this.x + xOffset;
-
-    for (let i = 0; i < encoded.data.length; i++) {
       buffer.drawChar(
-        encoded.data[i].char,
+        encodedFrame.data[i].char,
         x,
         this.y,
-        parseColor(this._colors[this._currentFrameIndex]?.[i] ?? this._color),
-        parseColor(this._backgroundColor)
+        parseColor(color),
+        parseColor(this._backgroundColor),
       );
-      x += encoded.data[i].width;
+      x += encodedFrame.data[i].width;
     }
-
-    buffer.freeUnicode(encoded);
   }
 
   protected override destroySelf(): void {
     this.stop();
+    this._freeFrames();
     super.destroySelf();
   }
 }
+
+export * from "./utils";
