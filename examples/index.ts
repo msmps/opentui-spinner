@@ -1,14 +1,12 @@
 import {
   BoxRenderable,
   createCliRenderer,
-  engine,
   type KeyEvent,
   TextRenderable,
 } from "@opentui/core";
 import { SpinnerRenderable } from "../src/index";
 
 const renderer = await createCliRenderer({ exitOnCtrlC: false });
-engine.attach(renderer);
 
 const container = new BoxRenderable(renderer, {
   border: true,

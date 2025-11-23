@@ -1,0 +1,122 @@
+import type { ColorInput } from "@opentui/core";
+import type { ColorGenerator } from "../../src/index";
+
+/**
+ * Options for creating a gradient trail effect with hold frames
+ */
+export interface ColorGradientOptions {
+  /** Gradient colors from brightest to darkest */
+  colors: ColorInput[];
+  /** How many positions show the gradient trail */
+  trailLength: number;
+  /** Color for inactive positions (default: "transparent") */
+  defaultColor?: ColorInput;
+  /** Number of frames to hold at start and end positions */
+  holdFrames?: number;
+}
+
+/**
+ * Creates a gradient trail effect that follows the spinner position
+ * @example
+ * ```typescript
+ * const colorGen = createGradientTrail({
+ *   colors: ["#f5a742", "#ec8b0d", "#b16809", "#764506", "#593405"],
+ *   trailLength: 5,
+ *   defaultColor: "#323232",
+ *   holdFrames: 4
+ * });
+ * ```
+ */
+export function createGradientTrail(
+  options: ColorGradientOptions,
+): ColorGenerator {
+  const {
+    colors,
+    trailLength,
+    defaultColor = "transparent",
+    holdFrames = 0,
+  } = options;
+
+  return (
+    frameIndex: number,
+    charIndex: number,
+    _totalFrames: number,
+    totalChars: number,
+  ) => {
+    let activePosition: number;
+    let isHoldingAtEnd = false;
+    let isHoldingAtStart = false;
+    let holdFrameProgress = 0; // 0 to holdFrames count
+    let isMovingForward = true; // Track direction of movement
+
+    // Calculate effective position accounting for hold frames and bidirectional movement
+    const forwardFrames = totalChars;
+    const holdEndFrames = holdFrames ?? 0;
+    const backwardFrames = totalChars - 1; // -1 because we skip the end position we held at
+
+    if (frameIndex < forwardFrames) {
+      // Moving forward
+      activePosition = frameIndex;
+      isMovingForward = true;
+    } else if (frameIndex < forwardFrames + holdEndFrames) {
+      // Holding at end - trail colors fade away
+      activePosition = totalChars - 1;
+      isHoldingAtEnd = true;
+      isMovingForward = true;
+      holdFrameProgress = frameIndex - forwardFrames;
+    } else if (frameIndex < forwardFrames + holdEndFrames + backwardFrames) {
+      // Moving backward
+      const backwardIndex = frameIndex - forwardFrames - holdEndFrames;
+      activePosition = totalChars - 2 - backwardIndex; // -2 to skip the end position we held at
+      isMovingForward = false;
+    } else {
+      // Holding at start - trail colors fade away
+      activePosition = 0;
+      isHoldingAtStart = true;
+      isMovingForward = false;
+      holdFrameProgress =
+        frameIndex - forwardFrames - holdEndFrames - backwardFrames;
+    }
+
+    // Calculate directional distance (positive means trailing behind)
+    const directionalDistance = isMovingForward
+      ? activePosition - charIndex // For forward: trail is to the left (lower indices)
+      : charIndex - activePosition; // For backward: trail is to the right (higher indices)
+
+    // Handle hold frame fading: keep the lead bright, fade the trail
+    if (isHoldingAtEnd || isHoldingAtStart) {
+      // At the active position, always show the brightest color
+      if (directionalDistance === 0) {
+        return colors[0];
+      }
+
+      // Only show trail behind the movement direction
+      if (directionalDistance > 0) {
+        // For trailing positions, they fade away during hold frames
+        // Calculate how many colors should still be visible
+        const visibleTrailLength = Math.max(
+          0,
+          trailLength - holdFrameProgress - 1,
+        );
+
+        if (directionalDistance <= visibleTrailLength) {
+          return colors[directionalDistance] ?? defaultColor;
+        }
+      }
+
+      return defaultColor;
+    }
+
+    // Normal movement - show gradient trail only behind the movement direction
+    if (directionalDistance > 0 && directionalDistance < trailLength) {
+      return colors[directionalDistance] ?? defaultColor;
+    }
+
+    // At the active position, show the brightest color
+    if (directionalDistance === 0) {
+      return colors[0];
+    }
+
+    return defaultColor;
+  };
+}
