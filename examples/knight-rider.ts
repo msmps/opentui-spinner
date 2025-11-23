@@ -258,9 +258,11 @@ const frames = Array.from({ length: totalFrames }, (_, frameIndex) => {
       width,
       trailOptions,
     );
-    // It's active if we have a valid color index that is within our colors array
-    const isActive = index >= 0 && index < trailOptions.colors.length;
-    return isActive ? "■" : "⬝";
+    const shapes = ["⬥", "◆", "⬩", "⬪"];
+    if (index >= 0 && index < trailOptions.colors.length) {
+      return shapes[Math.min(index, shapes.length - 1)];
+    }
+    return "·";
   }).join("");
 });
 
