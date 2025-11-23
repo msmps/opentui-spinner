@@ -156,7 +156,7 @@ const trailOptions = {
     "#440000", // Trail 4
   ],
   trailLength: 6,
-  defaultColor: "#111111" as const, // Unlit segments (dark gray)
+  defaultColor: "#220000" as const, // Unlit segments (dark red)
   direction: "bidirectional" as const,
   holdFrames: { start: holdStart, end: holdEnd },
 };
@@ -171,7 +171,7 @@ const frames = Array.from({ length: totalFrames }, (_, frameIndex) => {
       trailOptions,
     );
     // It's active if we have a valid color index that is within our colors array
-    const isActive = index !== -1 && index < trailOptions.colors.length;
+    const isActive = index >= 0 && index < trailOptions.colors.length;
     return isActive ? "■" : "⬝";
   }).join("");
 });
