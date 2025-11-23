@@ -220,3 +220,4 @@ export class SpinnerRenderable extends Renderable {
 }
 
 export * from "./utils";
+export * from "./knight-rider";
