@@ -77,7 +77,7 @@ export class SpinnerRenderable extends Renderable {
     this.width = maxFrameWidth;
     this.height = 1;
 
-    // Pre-encode frames (move this to a function and call in setter)
+    // Pre-encode frames
     this._encodeFrames();
 
     if (this._autoplay) {
