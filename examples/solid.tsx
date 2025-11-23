@@ -1,5 +1,4 @@
-import { createCliRenderer } from "@opentui/core";
-import { createRoot } from "@opentui/solid";
+import { render } from "@opentui/solid";
 import { createSignal, onCleanup } from "solid-js";
 
 import "opentui-spinner/solid";
@@ -24,11 +23,10 @@ function App() {
 
   return (
     <box alignItems="center" flexDirection="row">
-      <spinner name="bouncingBall" />
-      <text> {loadingSteps[step()]}</text>
+      <spinner name="bouncingBall" color="cyan" />
+      <text marginLeft={1}> {loadingSteps[step()]}</text>
     </box>
   );
 }
 
-const renderer = await createCliRenderer();
-createRoot(renderer).render(() => <App />);
+render(() => <App />);

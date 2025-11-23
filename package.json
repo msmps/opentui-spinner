@@ -1,6 +1,6 @@
 {
   "name": "opentui-spinner",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A small & opinionated spinner library",
   "author": "Matt Simpson",
   "license": "MIT",
@@ -53,9 +53,9 @@
     "tsdown": "^0.16.0"
   },
   "peerDependencies": {
-    "@opentui/core": "^0.1.48",
-    "@opentui/react": "^0.1.48",
-    "@opentui/solid": "^0.1.48",
+    "@opentui/core": "^0.1.49",
+    "@opentui/react": "^0.1.49",
+    "@opentui/solid": "^0.1.49",
     "typescript": "^5"
   },
   "peerDependenciesMeta": {

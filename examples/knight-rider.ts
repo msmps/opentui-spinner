@@ -1,5 +1,5 @@
 import { BoxRenderable, createCliRenderer, engine } from "@opentui/core";
-import { SpinnerRenderable, createFrames, createColors } from "../src/index";
+import { createColors, createFrames, SpinnerRenderable } from "../src/index";
 
 const renderer = await createCliRenderer();
 renderer.setBackgroundColor("#000000");
