@@ -45,7 +45,6 @@ export class SpinnerRenderable extends Renderable {
   > = {};
 
   private _lib: RenderLib = resolveRenderLib();
-  private _lastRenderTime: number = 0;
   private _intervalId: NodeJS.Timeout | null = null;
 
   protected _defaultOptions = {
@@ -63,10 +62,10 @@ export class SpinnerRenderable extends Renderable {
     this._name = options.name;
     this._frames = this._name
       ? spinners[this._name].frames
-      : (options.frames ?? this._defaultOptions.frames);
+      : options.frames ?? this._defaultOptions.frames;
     this._interval = this._name
       ? spinners[this._name].interval
-      : (options.interval ?? this._defaultOptions.interval);
+      : options.interval ?? this._defaultOptions.interval;
     this._autoplay = options.autoplay ?? this._defaultOptions.autoplay;
     this._backgroundColor =
       options.backgroundColor ?? this._defaultOptions.backgroundColor;
@@ -168,6 +167,8 @@ export class SpinnerRenderable extends Renderable {
 
   public start(): void {
     this._intervalId = setInterval(() => {
+      this._currentFrameIndex =
+        (this._currentFrameIndex + 1) % this._frames.length;
       this.requestRender();
     }, this._interval);
   }
@@ -181,13 +182,6 @@ export class SpinnerRenderable extends Renderable {
 
   protected override renderSelf(buffer: OptimizedBuffer): void {
     if (!this.visible) return;
-
-    const now = Date.now();
-    if (now - this._lastRenderTime >= this._interval) {
-      this._currentFrameIndex =
-        (this._currentFrameIndex + 1) % this._frames.length;
-      this._lastRenderTime = now;
-    }
 
     const currentFrame = this._frames[this._currentFrameIndex];
     if (!currentFrame) return;
@@ -203,7 +197,7 @@ export class SpinnerRenderable extends Renderable {
               this._currentFrameIndex,
               i,
               this._frames.length,
-              encodedFrame.data.length,
+              encodedFrame.data.length
             )
           : this._color;
 
@@ -212,7 +206,7 @@ export class SpinnerRenderable extends Renderable {
         x,
         this.y,
         parseColor(color),
-        parseColor(this._backgroundColor),
+        parseColor(this._backgroundColor)
       );
       x += encodedFrame.data[i].width;
     }
