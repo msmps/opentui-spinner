@@ -121,23 +121,13 @@ export function createGradientTrail(
 
     // Handle hold frame fading: keep the lead bright, fade the trail
     if (isHoldingAtEnd || isHoldingAtStart) {
-      // At the active position, always show the brightest color
-      if (directionalDistance === 0) {
-        return colors[0];
-      }
+      // Calculate how many positions are still visible (including head)
+      // When holding, we simulate the scanner continuing to move off-screen/fading out
+      const visibleLength = Math.max(0, trailLength - holdFrameProgress);
 
-      // Only show trail behind the movement direction
-      if (directionalDistance > 0) {
-        // For trailing positions, they fade away during hold frames
-        // Calculate how many colors should still be visible
-        const visibleTrailLength = Math.max(
-          0,
-          trailLength - holdFrameProgress - 1,
-        );
-
-        if (directionalDistance <= visibleTrailLength) {
-          return colors[directionalDistance] ?? defaultColor;
-        }
+      // Only show trail behind the movement direction if it's within the visible length
+      if (directionalDistance >= 0 && directionalDistance < visibleLength) {
+        return colors[directionalDistance] ?? defaultColor;
       }
 
       return defaultColor;
