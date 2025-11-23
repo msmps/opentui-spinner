@@ -226,50 +226,75 @@ function createKnightRiderTrail(
 }
 
 // Configuration for the Knight Rider scanner
-const width = 8;
+type KnightRiderStyle = "blocks" | "diamonds";
 
-// Cycle definition
-const holdStart = 25;
-const holdEnd = 6;
-// Bidirectional cycle: Forward (width) + Hold End + Backward (width-1) + Hold Start
-const totalFrames = width + holdEnd + (width - 1) + holdStart;
+interface KnightRiderOptions {
+  width?: number;
+  style?: KnightRiderStyle;
+}
 
-const trailOptions = {
-  colors: [
-    RGBA.fromHex("#ff0000"), // Brightest Red (Center)
-    RGBA.fromHex("#ff5555"), // Glare/Bloom
-    RGBA.fromHex("#dd0000"), // Trail 1
-    RGBA.fromHex("#aa0000"), // Trail 2
-    RGBA.fromHex("#770000"), // Trail 3
-    RGBA.fromHex("#440000"), // Trail 4
-  ],
-  trailLength: 6,
-  defaultColor: RGBA.fromHex("#330000"), // Unlit segments (dark red)
-  direction: "bidirectional" as const,
-  holdFrames: { start: holdStart, end: holdEnd },
-};
+function createKnightRiderSpinner(
+  renderer: Awaited<ReturnType<typeof createCliRenderer>>,
+  options: KnightRiderOptions = {},
+) {
+  const width = options.width ?? 8;
+  const style = options.style ?? "diamonds";
 
-// Generate dynamic frames where inactive pixels are dots and active ones are blocks
-const frames = Array.from({ length: totalFrames }, (_, frameIndex) => {
-  return Array.from({ length: width }, (_, charIndex) => {
-    const index = calculateColorIndex(
-      frameIndex,
-      charIndex,
-      width,
-      trailOptions,
-    );
-    const shapes = ["⬥", "◆", "⬩", "⬪"];
-    if (index >= 0 && index < trailOptions.colors.length) {
-      return shapes[Math.min(index, shapes.length - 1)];
-    }
-    return "·";
-  }).join("");
-});
+  // Cycle definition
+  const holdStart = 30;
+  const holdEnd = 9;
+  // Bidirectional cycle: Forward (width) + Hold End + Backward (width-1) + Hold Start
+  const totalFrames = width + holdEnd + (width - 1) + holdStart;
 
-const spinner = new SpinnerRenderable(renderer, {
-  frames,
-  interval: 40, // Slightly slower for "burst" effect
-  color: createKnightRiderTrail(trailOptions),
+  const trailOptions = {
+    colors: [
+      RGBA.fromHex("#ff0000"), // Brightest Red (Center)
+      RGBA.fromHex("#ff5555"), // Glare/Bloom
+      RGBA.fromHex("#dd0000"), // Trail 1
+      RGBA.fromHex("#aa0000"), // Trail 2
+      RGBA.fromHex("#770000"), // Trail 3
+      RGBA.fromHex("#440000"), // Trail 4
+    ],
+    trailLength: 6,
+    defaultColor: RGBA.fromHex("#330000"), // Unlit segments (dark red)
+    direction: "bidirectional" as const,
+    holdFrames: { start: holdStart, end: holdEnd },
+  };
+
+  // Generate dynamic frames where inactive pixels are dots and active ones are blocks
+  const frames = Array.from({ length: totalFrames }, (_, frameIndex) => {
+    return Array.from({ length: width }, (_, charIndex) => {
+      const index = calculateColorIndex(
+        frameIndex,
+        charIndex,
+        width,
+        trailOptions,
+      );
+
+      if (style === "diamonds") {
+        const shapes = ["⬥", "◆", "⬩", "⬪"];
+        if (index >= 0 && index < trailOptions.colors.length) {
+          return shapes[Math.min(index, shapes.length - 1)];
+        }
+        return "·";
+      }
+
+      // Default to blocks
+      // It's active if we have a valid color index that is within our colors array
+      const isActive = index >= 0 && index < trailOptions.colors.length;
+      return isActive ? "■" : "⬝";
+    }).join("");
+  });
+
+  return new SpinnerRenderable(renderer, {
+    frames,
+    interval: 40, // Slightly slower for "burst" effect
+    color: createKnightRiderTrail(trailOptions),
+  });
+}
+
+const spinner = createKnightRiderSpinner(renderer, {
+  style: "diamonds",
 });
 
 container.add(spinner);
