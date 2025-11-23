@@ -126,7 +126,7 @@ const pattern = char.repeat(width);
 
 // Cycle definition
 const holdStart = 25;
-const holdEnd = 0;
+const holdEnd = 6;
 // Bidirectional cycle: Forward (width) + Hold End + Backward (width-1) + Hold Start
 const totalFrames = width + holdEnd + (width - 1) + holdStart;
 
