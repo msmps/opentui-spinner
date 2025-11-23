@@ -99,6 +99,7 @@ export class SpinnerRenderable extends Renderable {
         this._lib.freeUnicode(this._encodedFrames[frame]);
       }
     }
+    this._encodedFrames = {};
   }
 
   public get interval(): number {
@@ -116,6 +117,7 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public set name(value: SpinnerName | undefined) {
+    this._freeFrames();
     this._name = value;
     this._frames = this._name
       ? spinners[this._name].frames
@@ -127,7 +129,7 @@ export class SpinnerRenderable extends Renderable {
     // Update width based on new frames
     const maxFrameWidth = Math.max(...this._frames.map((f) => f.length));
     this.width = maxFrameWidth;
-
+    this._encodeFrames();
     this.requestRender();
   }
 
