@@ -303,7 +303,7 @@ export interface KnightRiderOptions {
  */
 export function createFrames(options: KnightRiderOptions = {}): string[] {
   const width = options.width ?? 8;
-  const style = options.style ?? "diamonds";
+  const style = options.style ?? "blocks";
   const holdStart = options.holdStart ?? 30;
   const holdEnd = options.holdEnd ?? 9;
 
