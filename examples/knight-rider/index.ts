@@ -21,25 +21,26 @@ const colors = [
   "#00ffff",
 ];
 let colorIndex = 0;
-let style: KnightRiderStyle = "diamonds";
+let style: KnightRiderStyle = "blocks";
 let inactiveFactor = 0.2;
 
-// Container
+// Main container - full screen vertical layout
 const container = new BoxRenderable(renderer, {
-  paddingTop: 2,
-  paddingLeft: 4,
-  gap: 2,
+  width: "100%",
+  height: "100%",
   flexDirection: "column",
+  justifyContent: "space-between",
 });
 renderer.root.add(container);
 
-// Spinner wrapper
-const wrapper = new BoxRenderable(renderer, {
+// Spinner area - centered
+const spinnerArea = new BoxRenderable(renderer, {
   width: "100%",
+  height: "100%",
   alignItems: "center",
   justifyContent: "center",
 });
-container.add(wrapper);
+container.add(spinnerArea);
 
 // Spinner
 const spinner = new SpinnerRenderable(renderer, {
@@ -47,21 +48,31 @@ const spinner = new SpinnerRenderable(renderer, {
   interval: 40,
   color: createColors({ color: colors[colorIndex], style, inactiveFactor }),
 });
-wrapper.add(spinner);
+spinnerArea.add(spinner);
+
+// Info area at bottom
+const infoArea = new BoxRenderable(renderer, {
+  width: "100%",
+  paddingLeft: 2,
+  paddingRight: 2,
+  paddingBottom: 1,
+  gap: 1,
+  flexDirection: "column",
+});
+container.add(infoArea);
 
 // Help text
 const helpText = new TextRenderable(renderer, {
   content:
     "Controls: [c] cycle color | [s] toggle style | [+/-] adjust inactive brightness | [q] quit",
 });
-container.add(helpText);
+infoArea.add(helpText);
 
 // Status text
 const statusText = new TextRenderable(renderer, {
   content: `Color: ${colors[colorIndex]} | Style: ${style} | Inactive: ${(inactiveFactor * 100).toFixed(0)}%`,
-  marginTop: 1,
 });
-container.add(statusText);
+infoArea.add(statusText);
 
 // Update spinner function
 function updateSpinner() {
@@ -106,6 +117,9 @@ renderer.keyInput.on("keypress", (key: KeyEvent) => {
     case "q":
     case "\u0003": // Ctrl+C
       renderer.destroy();
+      break;
+    case ".":
+      renderer.toggleDebugOverlay();
       break;
   }
 });
