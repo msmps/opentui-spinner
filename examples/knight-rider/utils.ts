@@ -110,10 +110,11 @@ function calculateColorIndex(
     AdvancedGradientOptions,
     "direction" | "holdFrames" | "trailLength"
   >,
+  state?: ScannerState,
 ): number {
   const { trailLength } = options;
   const { activePosition, isHolding, holdProgress, isMovingForward } =
-    getScannerState(frameIndex, totalChars, options);
+    state ?? getScannerState(frameIndex, totalChars, options);
 
   // Calculate directional distance (positive means trailing behind)
   const directionalDistance = isMovingForward
@@ -158,11 +159,15 @@ function createKnightRiderTrail(
     _totalFrames: number,
     totalChars: number,
   ) => {
+    // Calculate scanner state once and reuse it
+    const state = getScannerState(frameIndex, totalChars, options);
+
     const index = calculateColorIndex(
       frameIndex,
       charIndex,
       totalChars,
       options,
+      state,
     );
 
     // Calculate global fade for inactive dots during hold or movement
@@ -172,7 +177,7 @@ function createKnightRiderTrail(
       holdTotal,
       movementProgress,
       movementTotal,
-    } = getScannerState(frameIndex, totalChars, options);
+    } = state;
 
     let alpha = 1.0;
     if (isHolding && holdTotal > 0) {
