@@ -153,14 +153,21 @@ function createKnightRiderTrail(
       ? defaultColor
       : RGBA.fromHex((defaultColor as string) || "#000000");
 
+  let cachedFrameIndex = -1;
+  let cachedState: ScannerState | null = null;
+
   return (
     frameIndex: number,
     charIndex: number,
     _totalFrames: number,
     totalChars: number,
   ) => {
-    // Calculate scanner state once and reuse it
-    const state = getScannerState(frameIndex, totalChars, options);
+    if (frameIndex !== cachedFrameIndex) {
+      cachedFrameIndex = frameIndex;
+      cachedState = getScannerState(frameIndex, totalChars, options);
+    }
+
+    const state = cachedState!;
 
     const index = calculateColorIndex(
       frameIndex,
