@@ -245,6 +245,26 @@ export function deriveTrailColors(
   return colors;
 }
 
+/**
+ * Derives the inactive/default color from a bright color
+ * @param brightColor The brightest color (center/head of the scanner)
+ * @returns A much darker version suitable for inactive dots
+ */
+export function deriveInactiveColor(brightColor: ColorInput): RGBA {
+  const baseRgba =
+    brightColor instanceof RGBA
+      ? brightColor
+      : RGBA.fromHex(brightColor as string);
+
+  // Make it very dark - about 20% of the original brightness
+  const factor = 0.2;
+  const r = baseRgba.r * factor;
+  const g = baseRgba.g * factor;
+  const b = baseRgba.b * factor;
+
+  return RGBA.fromValues(r, g, b, 1.0);
+}
+
 export type KnightRiderStyle = "blocks" | "diamonds";
 
 export interface KnightRiderOptions {
@@ -284,10 +304,16 @@ export function createFrames(options: KnightRiderOptions = {}): string[] {
           RGBA.fromHex("#440000"), // Trail 4
         ]);
 
+  const defaultColor =
+    options.defaultColor ??
+    (options.color
+      ? deriveInactiveColor(options.color)
+      : RGBA.fromHex("#330000"));
+
   const trailOptions = {
     colors,
     trailLength: colors.length,
-    defaultColor: options.defaultColor ?? RGBA.fromHex("#330000"),
+    defaultColor,
     direction: "bidirectional" as const,
     holdFrames: { start: holdStart, end: holdEnd },
   };
@@ -345,10 +371,16 @@ export function createColors(options: KnightRiderOptions = {}): ColorGenerator {
           RGBA.fromHex("#440000"), // Trail 4
         ]);
 
+  const defaultColor =
+    options.defaultColor ??
+    (options.color
+      ? deriveInactiveColor(options.color)
+      : RGBA.fromHex("#330000"));
+
   const trailOptions = {
     colors,
     trailLength: colors.length,
-    defaultColor: options.defaultColor ?? RGBA.fromHex("#330000"),
+    defaultColor,
     direction: "bidirectional" as const,
     holdFrames: { start: holdStart, end: holdEnd },
   };
