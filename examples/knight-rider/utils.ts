@@ -202,6 +202,49 @@ function createKnightRiderTrail(
   };
 }
 
+/**
+ * Derives a gradient of tail colors from a single bright color
+ * @param brightColor The brightest color (center/head of the scanner)
+ * @param steps Number of gradient steps (default: 6)
+ * @returns Array of RGBA colors from brightest to darkest
+ */
+export function deriveTrailColors(
+  brightColor: ColorInput,
+  steps: number = 6,
+): RGBA[] {
+  const baseRgba =
+    brightColor instanceof RGBA
+      ? brightColor
+      : RGBA.fromHex(brightColor as string);
+
+  const colors: RGBA[] = [];
+
+  for (let i = 0; i < steps; i++) {
+    // Progressive darkening:
+    // i=0: 100% brightness (original color)
+    // i=1: add slight bloom/glare (lighten)
+    // i=2+: progressively darken
+    let factor: number;
+
+    if (i === 0) {
+      factor = 1.0; // Original brightness
+    } else if (i === 1) {
+      factor = 1.2; // Slight bloom/glare effect
+    } else {
+      // Exponential decay for natural-looking trail fade
+      factor = Math.pow(0.6, i - 1);
+    }
+
+    const r = Math.min(1.0, baseRgba.r * factor);
+    const g = Math.min(1.0, baseRgba.g * factor);
+    const b = Math.min(1.0, baseRgba.b * factor);
+
+    colors.push(RGBA.fromValues(r, g, b, 1.0));
+  }
+
+  return colors;
+}
+
 export type KnightRiderStyle = "blocks" | "diamonds";
 
 export interface KnightRiderOptions {
@@ -210,6 +253,10 @@ export interface KnightRiderOptions {
   holdStart?: number;
   holdEnd?: number;
   colors?: ColorInput[];
+  /** Single color to derive trail from (alternative to providing colors array) */
+  color?: ColorInput;
+  /** Number of trail steps when using single color (default: 6) */
+  trailSteps?: number;
   defaultColor?: ColorInput;
 }
 
@@ -224,14 +271,18 @@ export function createFrames(options: KnightRiderOptions = {}): string[] {
   const holdStart = options.holdStart ?? 30;
   const holdEnd = options.holdEnd ?? 9;
 
-  const colors = options.colors ?? [
-    RGBA.fromHex("#ff0000"), // Brightest Red (Center)
-    RGBA.fromHex("#ff5555"), // Glare/Bloom
-    RGBA.fromHex("#dd0000"), // Trail 1
-    RGBA.fromHex("#aa0000"), // Trail 2
-    RGBA.fromHex("#770000"), // Trail 3
-    RGBA.fromHex("#440000"), // Trail 4
-  ];
+  const colors =
+    options.colors ??
+    (options.color
+      ? deriveTrailColors(options.color, options.trailSteps)
+      : [
+          RGBA.fromHex("#ff0000"), // Brightest Red (Center)
+          RGBA.fromHex("#ff5555"), // Glare/Bloom
+          RGBA.fromHex("#dd0000"), // Trail 1
+          RGBA.fromHex("#aa0000"), // Trail 2
+          RGBA.fromHex("#770000"), // Trail 3
+          RGBA.fromHex("#440000"), // Trail 4
+        ]);
 
   const trailOptions = {
     colors,
@@ -281,14 +332,18 @@ export function createColors(options: KnightRiderOptions = {}): ColorGenerator {
   const holdStart = options.holdStart ?? 30;
   const holdEnd = options.holdEnd ?? 9;
 
-  const colors = options.colors ?? [
-    RGBA.fromHex("#ff0000"), // Brightest Red (Center)
-    RGBA.fromHex("#ff5555"), // Glare/Bloom
-    RGBA.fromHex("#dd0000"), // Trail 1
-    RGBA.fromHex("#aa0000"), // Trail 2
-    RGBA.fromHex("#770000"), // Trail 3
-    RGBA.fromHex("#440000"), // Trail 4
-  ];
+  const colors =
+    options.colors ??
+    (options.color
+      ? deriveTrailColors(options.color, options.trailSteps)
+      : [
+          RGBA.fromHex("#ff0000"), // Brightest Red (Center)
+          RGBA.fromHex("#ff5555"), // Glare/Bloom
+          RGBA.fromHex("#dd0000"), // Trail 1
+          RGBA.fromHex("#aa0000"), // Trail 2
+          RGBA.fromHex("#770000"), // Trail 3
+          RGBA.fromHex("#440000"), // Trail 4
+        ]);
 
   const trailOptions = {
     colors,
