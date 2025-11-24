@@ -248,16 +248,18 @@ export function deriveTrailColors(
 /**
  * Derives the inactive/default color from a bright color
  * @param brightColor The brightest color (center/head of the scanner)
+ * @param factor Brightness factor for inactive color (default: 0.2)
  * @returns A much darker version suitable for inactive dots
  */
-export function deriveInactiveColor(brightColor: ColorInput): RGBA {
+export function deriveInactiveColor(
+  brightColor: ColorInput,
+  factor: number = 0.2,
+): RGBA {
   const baseRgba =
     brightColor instanceof RGBA
       ? brightColor
       : RGBA.fromHex(brightColor as string);
 
-  // Make it very dark - about 20% of the original brightness
-  const factor = 0.2;
   const r = baseRgba.r * factor;
   const g = baseRgba.g * factor;
   const b = baseRgba.b * factor;
@@ -278,6 +280,8 @@ export interface KnightRiderOptions {
   /** Number of trail steps when using single color (default: 6) */
   trailSteps?: number;
   defaultColor?: ColorInput;
+  /** Brightness factor for inactive color when using single color (default: 0.2) */
+  inactiveFactor?: number;
 }
 
 /**
@@ -307,7 +311,7 @@ export function createFrames(options: KnightRiderOptions = {}): string[] {
   const defaultColor =
     options.defaultColor ??
     (options.color
-      ? deriveInactiveColor(options.color)
+      ? deriveInactiveColor(options.color, options.inactiveFactor)
       : RGBA.fromHex("#330000"));
 
   const trailOptions = {
@@ -374,7 +378,7 @@ export function createColors(options: KnightRiderOptions = {}): ColorGenerator {
   const defaultColor =
     options.defaultColor ??
     (options.color
-      ? deriveInactiveColor(options.color)
+      ? deriveInactiveColor(options.color, options.inactiveFactor)
       : RGBA.fromHex("#330000"));
 
   const trailOptions = {
