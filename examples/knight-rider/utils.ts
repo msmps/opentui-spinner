@@ -23,7 +23,7 @@ interface ScannerState {
 function getScannerState(
   frameIndex: number,
   totalChars: number,
-  options: Pick<AdvancedGradientOptions, "direction" | "holdFrames">
+  options: Pick<AdvancedGradientOptions, "direction" | "holdFrames">,
 ): ScannerState {
   const { direction = "forward", holdFrames = {} } = options;
 
@@ -109,7 +109,7 @@ function calculateColorIndex(
   options: Pick<
     AdvancedGradientOptions,
     "direction" | "holdFrames" | "trailLength"
-  >
+  >,
 ): number {
   const { trailLength } = options;
   const { activePosition, isHolding, holdProgress, isMovingForward } =
@@ -140,7 +140,7 @@ function calculateColorIndex(
 }
 
 function createKnightRiderTrail(
-  options: AdvancedGradientOptions
+  options: AdvancedGradientOptions,
 ): ColorGenerator {
   const { colors, defaultColor } = options;
 
@@ -156,13 +156,13 @@ function createKnightRiderTrail(
     frameIndex: number,
     charIndex: number,
     _totalFrames: number,
-    totalChars: number
+    totalChars: number,
   ) => {
     const index = calculateColorIndex(
       frameIndex,
       charIndex,
       totalChars,
-      options
+      options,
     );
 
     // Calculate global fade for inactive dots during hold or movement
@@ -183,7 +183,7 @@ function createKnightRiderTrail(
       // Fade in linearly during movement
       const progress = Math.min(
         movementProgress / Math.max(1, movementTotal - 1),
-        1
+        1,
       );
       alpha = progress;
     }
@@ -251,7 +251,7 @@ export function createFrames(options: KnightRiderOptions = {}): string[] {
         frameIndex,
         charIndex,
         width,
-        trailOptions
+        trailOptions,
       );
 
       if (style === "diamonds") {
