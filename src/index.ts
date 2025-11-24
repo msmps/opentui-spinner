@@ -168,6 +168,9 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public start(): void {
+    // If interval is already set, do nothing
+    if (this._intervalId) return;
+
     this._intervalId = setInterval(() => {
       this._currentFrameIndex =
         (this._currentFrameIndex + 1) % this._frames.length;
