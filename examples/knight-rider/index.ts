@@ -1,5 +1,6 @@
 import { BoxRenderable, createCliRenderer, engine } from "@opentui/core";
-import { createColors, createFrames, SpinnerRenderable } from "../src/index";
+import { SpinnerRenderable } from "../../src/index";
+import { createColors, createFrames } from "./utils";
 
 const renderer = await createCliRenderer();
 renderer.setBackgroundColor("#000000");
@@ -12,9 +13,9 @@ const container = new BoxRenderable(renderer, {
 renderer.root.add(container);
 
 const spinner = new SpinnerRenderable(renderer, {
-  frames: createFrames({ style: "diamonds" }),
+  frames: createFrames({ style: "blocks" }),
   interval: 40,
-  color: createColors({ style: "diamonds" }),
+  color: createColors({ style: "blocks" }),
 });
 
 container.add(spinner);
