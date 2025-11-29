@@ -23,6 +23,8 @@ const colors = [
 let colorIndex = 0;
 let style: KnightRiderStyle = "blocks";
 let inactiveFactor = 0.2;
+let enableFading = true;
+let minAlpha = 0.0;
 
 // Main container - full screen vertical layout
 const container = new BoxRenderable(renderer, {
@@ -44,9 +46,21 @@ container.add(spinnerArea);
 
 // Spinner
 const spinner = new SpinnerRenderable(renderer, {
-  frames: createFrames({ color: colors[colorIndex], style, inactiveFactor }),
+  frames: createFrames({
+    color: colors[colorIndex],
+    style,
+    inactiveFactor,
+    enableFading,
+    minAlpha,
+  }),
   interval: 40,
-  color: createColors({ color: colors[colorIndex], style, inactiveFactor }),
+  color: createColors({
+    color: colors[colorIndex],
+    style,
+    inactiveFactor,
+    enableFading,
+    minAlpha,
+  }),
 });
 spinnerArea.add(spinner);
 
@@ -64,13 +78,13 @@ container.add(infoArea);
 // Help text
 const helpText = new TextRenderable(renderer, {
   content:
-    "Controls: [c] cycle color | [s] toggle style | [+/-] adjust inactive brightness | [q] quit",
+    "Controls: [c] cycle color | [s] toggle style | [+/-] adjust inactive | [f] toggle fade | [a/A] adjust min alpha | [q] quit",
 });
 infoArea.add(helpText);
 
 // Status text
 const statusText = new TextRenderable(renderer, {
-  content: `Color: ${colors[colorIndex]} | Style: ${style} | Inactive: ${(inactiveFactor * 100).toFixed(0)}%`,
+  content: `Color: ${colors[colorIndex]} | Style: ${style} | Inactive: ${(inactiveFactor * 100).toFixed(0)}% | Fade: ${enableFading ? "ON" : "OFF"} | MinAlpha: ${(minAlpha * 100).toFixed(0)}%`,
 });
 infoArea.add(statusText);
 
@@ -80,13 +94,17 @@ function updateSpinner() {
     color: colors[colorIndex],
     style,
     inactiveFactor,
+    enableFading,
+    minAlpha,
   });
   spinner.color = createColors({
     color: colors[colorIndex],
     style,
     inactiveFactor,
+    enableFading,
+    minAlpha,
   });
-  statusText.content = `Color: ${colors[colorIndex]} | Style: ${style} | Inactive: ${(inactiveFactor * 100).toFixed(0)}%`;
+  statusText.content = `Color: ${colors[colorIndex]} | Style: ${style} | Inactive: ${(inactiveFactor * 100).toFixed(0)}% | Fade: ${enableFading ? "ON" : "OFF"} | MinAlpha: ${(minAlpha * 100).toFixed(0)}%`;
 }
 
 // Keyboard controls
@@ -112,6 +130,21 @@ renderer.keyInput.on("keypress", (key: KeyEvent) => {
     case "_":
       // Decrease inactive factor
       inactiveFactor = Math.max(0.0, inactiveFactor - 0.05);
+      updateSpinner();
+      break;
+    case "f":
+      // Toggle fade
+      enableFading = !enableFading;
+      updateSpinner();
+      break;
+    case "a":
+      // Decrease min alpha
+      minAlpha = Math.max(0.0, minAlpha - 0.05);
+      updateSpinner();
+      break;
+    case "A":
+      // Increase min alpha
+      minAlpha = Math.min(1.0, minAlpha + 0.05);
       updateSpinner();
       break;
     case "q":
