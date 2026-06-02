@@ -31,6 +31,10 @@
       }
     }
   },
+  "sideEffects": [
+    "./dist/solid.mjs",
+    "./dist/react.mjs"
+  ],
   "files": [
     "dist"
   ],
