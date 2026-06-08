@@ -223,16 +223,38 @@ describe("SpinnerRenderable rendering", () => {
 });
 
 describe("SpinnerRenderable animation", () => {
-  it("rejects invalid updates without changing a running spinner", () => {
-    const spinner = createSpinner({ interval: 80 });
-    spinner.start();
+  it.each([
+    ["zero", 0],
+    ["negative", -1],
+    ["faster than 60 FPS", MIN_SPINNER_INTERVAL - 0.001],
+    ["slower than 1 FPS", MAX_SPINNER_INTERVAL + 0.001],
+    ["NaN", Number.NaN],
+    ["positive infinity", Number.POSITIVE_INFINITY],
+    ["negative infinity", Number.NEGATIVE_INFINITY],
+  ])(
+    "rejects a %s interval update without changing a running spinner",
+    (_description, interval) => {
+      const spinner = createSpinner({ interval: 80 });
+      spinner.start();
 
-    expect(() => {
-      spinner.interval = 0;
-    }).toThrow(RangeError);
-    expect(spinner.interval).toBe(80);
-    expect(clock.activeTimers).toBe(1);
-    expect(clock.callbacks).toHaveLength(1);
+      expect(() => {
+        spinner.interval = interval;
+      }).toThrow(RangeError);
+      expect(spinner.interval).toBe(80);
+      expect(clock.activeTimers).toBe(1);
+      expect(clock.callbacks).toHaveLength(1);
+      expect(clock.cleared).toHaveLength(0);
+    },
+  );
+
+  it("accepts inclusive interval boundary updates", () => {
+    const spinner = createSpinner({ interval: 80 });
+
+    spinner.interval = MIN_SPINNER_INTERVAL;
+    expect(spinner.interval).toBe(MIN_SPINNER_INTERVAL);
+
+    spinner.interval = MAX_SPINNER_INTERVAL;
+    expect(spinner.interval).toBe(MAX_SPINNER_INTERVAL);
   });
 
   it("advances frames, wraps, and requests rendering", async () => {
@@ -660,6 +682,25 @@ describe("shared spinner scheduler", () => {
 
     expect(requestRender).toHaveBeenCalledTimes(1);
     expect(clock.delays.at(-1)).toBe(80);
+  });
+
+  it("does not consume the frame budget when a timer fires early", () => {
+    const spinner = createSpinner({
+      frames: ["A", "B"],
+      interval: MIN_SPINNER_INTERVAL,
+    });
+    const requestRender = spyOn(spinner, "requestRender");
+    spinner.start();
+
+    clock.nowValue = 16;
+    clock.callbacks[0]?.();
+
+    expect(requestRender).not.toHaveBeenCalled();
+    expect(clock.activeTimers).toBe(1);
+    expect(clock.delays.at(-1)).toBeCloseTo(MIN_SPINNER_INTERVAL - 16);
+
+    clock.advance(MIN_SPINNER_INTERVAL - 16);
+    expect(requestRender).toHaveBeenCalledTimes(1);
   });
 
   it("advances every overdue spinner once after delayed delivery", () => {

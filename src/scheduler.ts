@@ -133,14 +133,15 @@ class SpinnerScheduler {
     this.clock.clearInterval(timer);
 
     const now = this.clock.now();
-    this.lastWakeAt = now;
     this.discardStaleRoots();
+    let advanced = false;
 
     while (this.heap[0] && this.heap[0].nextDueAt <= now) {
       const registration = this.pop();
       if (!registration || !this.isCurrent(registration)) continue;
 
       registration.advance();
+      advanced = true;
 
       if (!this.isCurrent(registration)) continue;
 
@@ -148,6 +149,7 @@ class SpinnerScheduler {
       this.push(registration);
     }
 
+    if (advanced) this.lastWakeAt = now;
     this.compactIfNeeded();
     this.armNext();
   }
