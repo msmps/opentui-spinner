@@ -259,6 +259,38 @@ describe("SpinnerRenderable animation", () => {
     await setup.renderOnce();
     expect(firstLine()).toContain("X");
   });
+
+  it("preserves the current frame when an equivalent frame array is assigned", async () => {
+    const spinner = createSpinner({ frames: ["A", "B", "C"] });
+    spinner.start();
+    intervalCallbacks[0]?.();
+    intervalCallbacks[0]?.();
+
+    spinner.frames = ["A", "B", "C"];
+
+    await setup.renderOnce();
+    expect(firstLine()).toContain("C");
+  });
+
+  it("preserves the current frame when the effective name is unchanged", async () => {
+    const spinner = createSpinner({ name: "line" });
+    spinner.start();
+    intervalCallbacks[0]?.();
+
+    spinner.name = "line";
+
+    await setup.renderOnce();
+    expect(firstLine()).toContain(spinners.line.frames[1]);
+  });
+
+  it("applies a named spinner when the current custom frames differ", () => {
+    const spinner = createSpinner({ name: "line", frames: ["A", "B"] });
+
+    spinner.name = "line";
+
+    expect(spinner.frames).toEqual(spinners.line.frames);
+    expect(spinner.interval).toBe(spinners.line.interval);
+  });
 });
 
 describe("SpinnerRenderable updates and cleanup", () => {

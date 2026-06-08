@@ -15,6 +15,13 @@ import type { ColorGenerator } from "./utils";
 
 type SpinnerName = keyof typeof spinners;
 
+function framesEqual(left: string[], right: string[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((frame, index) => frame === right[index])
+  );
+}
+
 export interface SpinnerOptions
   extends Omit<
     RenderableOptions<SpinnerRenderable>,
@@ -129,21 +136,27 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public set name(value: SpinnerName | undefined) {
-    const wasRunning = this._intervalId !== null;
-    if (wasRunning) this.stop();
-    this._freeFrames();
-    this._name = value;
-    this._frames = this._name
-      ? spinners[this._name].frames
-      : this._defaultOptions.frames;
-    this._interval = this._name
-      ? spinners[this._name].interval
+    const frames = value ? spinners[value].frames : this._defaultOptions.frames;
+    const interval = value
+      ? spinners[value].interval
       : this._defaultOptions.interval;
-    this._currentFrameIndex = 0;
+    const framesChanged = !framesEqual(this._frames, frames);
+    const intervalChanged = this._interval !== interval;
+    const wasRunning = this._intervalId !== null;
 
-    this._encodeFrames();
-    if (wasRunning) this.start();
-    this.requestRender();
+    if (wasRunning && intervalChanged) this.stop();
+    this._name = value;
+    this._interval = interval;
+
+    if (framesChanged) {
+      this._freeFrames();
+      this._frames = frames;
+      this._currentFrameIndex = 0;
+      this._encodeFrames();
+      this.requestRender();
+    }
+
+    if (wasRunning && intervalChanged) this.start();
   }
 
   public get frames(): string[] {
@@ -151,8 +164,14 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public set frames(value: string[]) {
+    const frames = value.length === 0 ? this._defaultOptions.frames : value;
+    if (framesEqual(this._frames, frames)) {
+      this._frames = frames;
+      return;
+    }
+
     this._freeFrames();
-    this._frames = value.length === 0 ? this._defaultOptions.frames : value;
+    this._frames = frames;
     this._currentFrameIndex = 0;
     this._encodeFrames();
 
