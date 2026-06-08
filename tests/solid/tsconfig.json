@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxImportSource": "@opentui/solid"
+  },
+  "include": [
+    "../../src/index.ts",
+    "../../src/utils.ts",
+    "../../src/solid.ts",
+    "./**/*.tsx"
+  ],
+  "exclude": ["../../dist"]
+}

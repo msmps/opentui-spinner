@@ -1,5 +1,5 @@
 import { extend } from "@opentui/react";
-import { SpinnerRenderable } from ".";
+import { SpinnerRenderable } from "./index";
 
 // Add TypeScript support
 declare module "@opentui/react" {
@@ -9,4 +9,8 @@ declare module "@opentui/react" {
 }
 
 // Register the component
-extend({ spinner: SpinnerRenderable });
+export function registerSpinner(): void {
+  extend({ spinner: SpinnerRenderable });
+}
+
+registerSpinner();

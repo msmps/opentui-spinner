@@ -6,6 +6,7 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "jsx": "react-jsx",
+    "jsxImportSource": "@opentui/react",
     "allowJs": true,
 
     // Bundler mode
@@ -25,5 +26,14 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "include": [
+    "src/index.ts",
+    "src/utils.ts",
+    "src/react.ts",
+    "tests/core/**/*.ts",
+    "tests/package/**/*.ts",
+    "tests/react/**/*.tsx"
+  ],
+  "exclude": ["dist", "tests/solid"]
 }
