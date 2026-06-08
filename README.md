@@ -145,7 +145,7 @@ render(() => <App />);
 | ----------------- | ------------------------------ | --------------- | -------------------------------------------- |
 | `name`            | `SpinnerName`                  | `"dots"`        | Name of a built-in spinner from cli-spinners |
 | `frames`          | `string[]`                     | -               | Custom animation frames (overrides `name`)   |
-| `interval`        | `number`                       | -               | Time between frames in milliseconds          |
+| `interval`        | `number`                       | -               | 16.67-1000ms between frames (60-1 FPS)        |
 | `autoplay`        | `boolean`                      | `true`          | Whether to start playing automatically       |
 | `color`           | `ColorInput \| ColorGenerator` | `"white"`       | Foreground color or color generator function |
 | `backgroundColor` | `ColorInput`                   | `"transparent"` | Background color                             |
@@ -191,6 +191,12 @@ spinner.frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇",
 // Adjust interval
 spinner.interval = 100;
 ```
+
+Intervals must be finite numbers from `1000 / 60` through `1000`
+milliseconds, inclusive. Invalid constructor values and property updates throw a
+`RangeError`. All running spinners share one adaptive scheduler interval while
+retaining independent animation timing, including across multiple OpenTUI
+renderers in the same process.
 
 ## Available Spinners
 

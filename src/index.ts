@@ -11,6 +11,7 @@ import {
 } from "@opentui/core";
 
 import spinners from "cli-spinners";
+import { spinnerScheduler, validateSpinnerInterval } from "./scheduler";
 import type { ColorGenerator } from "./utils";
 
 type SpinnerName = keyof typeof spinners;
@@ -52,7 +53,14 @@ export class SpinnerRenderable extends Renderable {
   > = {};
 
   private _lib: RenderLib = resolveRenderLib();
-  private _intervalId: ReturnType<typeof setInterval> | null = null;
+  private _isRunning = false;
+  private readonly _advanceFrame = (): void => {
+    if (!this._isRunning || this.isDestroyed) return;
+
+    this._currentFrameIndex =
+      (this._currentFrameIndex + 1) % this._frames.length;
+    this.requestRender();
+  };
 
   protected _defaultOptions = {
     name: "dots",
@@ -72,11 +80,12 @@ export class SpinnerRenderable extends Renderable {
       : this._name
         ? spinners[this._name].frames
         : this._defaultOptions.frames;
-    this._interval =
+    this._interval = validateSpinnerInterval(
       options.interval ??
-      (this._name
-        ? spinners[this._name].interval
-        : this._defaultOptions.interval);
+        (this._name
+          ? spinners[this._name].interval
+          : this._defaultOptions.interval),
+    );
     this._autoplay = options.autoplay ?? this._defaultOptions.autoplay;
     this._backgroundColor =
       options.backgroundColor ?? this._defaultOptions.backgroundColor;
@@ -125,10 +134,10 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public set interval(value: number) {
-    const wasRunning = this._intervalId !== null;
-    if (wasRunning) this.stop();
-    this._interval = value;
-    if (wasRunning) this.start();
+    this._interval = validateSpinnerInterval(value);
+    if (this._isRunning) {
+      spinnerScheduler.reschedule(this, this._interval);
+    }
   }
 
   public get name(): SpinnerName | undefined {
@@ -137,14 +146,11 @@ export class SpinnerRenderable extends Renderable {
 
   public set name(value: SpinnerName | undefined) {
     const frames = value ? spinners[value].frames : this._defaultOptions.frames;
-    const interval = value
-      ? spinners[value].interval
-      : this._defaultOptions.interval;
+    const interval = validateSpinnerInterval(
+      value ? spinners[value].interval : this._defaultOptions.interval,
+    );
     const framesChanged = !framesEqual(this._frames, frames);
     const intervalChanged = this._interval !== interval;
-    const wasRunning = this._intervalId !== null;
-
-    if (wasRunning && intervalChanged) this.stop();
     this._name = value;
     this._interval = interval;
 
@@ -156,7 +162,9 @@ export class SpinnerRenderable extends Renderable {
       this.requestRender();
     }
 
-    if (wasRunning && intervalChanged) this.start();
+    if (this._isRunning && intervalChanged) {
+      spinnerScheduler.reschedule(this, interval);
+    }
   }
 
   public get frames(): string[] {
@@ -210,21 +218,17 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public start(): void {
-    // If interval is already set, do nothing
-    if (this._intervalId) return;
+    if (this._isRunning || this.isDestroyed) return;
 
-    this._intervalId = setInterval(() => {
-      this._currentFrameIndex =
-        (this._currentFrameIndex + 1) % this._frames.length;
-      this.requestRender();
-    }, this._interval);
+    this._isRunning = true;
+    spinnerScheduler.start(this, this._interval, this._advanceFrame);
   }
 
   public stop(): void {
-    if (this._intervalId) {
-      clearInterval(this._intervalId);
-      this._intervalId = null;
-    }
+    if (!this._isRunning) return;
+
+    this._isRunning = false;
+    spinnerScheduler.stop(this);
   }
 
   protected override renderSelf(buffer: OptimizedBuffer): void {

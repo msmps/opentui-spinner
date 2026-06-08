@@ -4,35 +4,22 @@ import { testRender } from "@opentui/solid";
 import { getComponentCatalogue } from "@opentui/solid/components";
 import { createSignal } from "solid-js";
 import { SpinnerRenderable } from "../../src/index";
+import { setSpinnerSchedulerClockForTesting } from "../../src/scheduler";
 import { registerSpinner } from "../../src/solid";
+import { FakeSchedulerClock } from "../core/fake-scheduler-clock";
 
 let setup: Awaited<ReturnType<typeof testRender>> | undefined;
-let originalSetInterval: typeof globalThis.setInterval;
-let originalClearInterval: typeof globalThis.clearInterval;
-let intervalCallbacks: Array<() => void>;
-let clearedIntervals: ReturnType<typeof setInterval>[];
+let clock: FakeSchedulerClock;
 
 beforeEach(() => {
-  originalSetInterval = globalThis.setInterval;
-  originalClearInterval = globalThis.clearInterval;
-  intervalCallbacks = [];
-  clearedIntervals = [];
-  globalThis.setInterval = ((callback: () => void) => {
-    intervalCallbacks.push(callback);
-    return intervalCallbacks.length as unknown as ReturnType<
-      typeof setInterval
-    >;
-  }) as typeof globalThis.setInterval;
-  globalThis.clearInterval = ((handle: ReturnType<typeof setInterval>) => {
-    clearedIntervals.push(handle);
-  }) as typeof globalThis.clearInterval;
+  clock = new FakeSchedulerClock();
+  setSpinnerSchedulerClockForTesting(clock);
 });
 
 afterEach(() => {
   setup?.renderer.destroy();
   setup = undefined;
-  globalThis.setInterval = originalSetInterval;
-  globalThis.clearInterval = originalClearInterval;
+  setSpinnerSchedulerClockForTesting(undefined);
 });
 
 describe("opentui-spinner/solid", () => {
@@ -120,18 +107,18 @@ describe("opentui-spinner/solid", () => {
     const lib = (initialSpinner as unknown as { _lib: RenderLib })._lib;
     const encodeUnicode = spyOn(lib, "encodeUnicode");
     const freeUnicode = spyOn(lib, "freeUnicode");
-    const intervalCount = intervalCallbacks.length;
-    const clearCount = clearedIntervals.length;
+    const intervalCount = clock.callbacks.length;
+    const clearCount = clock.cleared.length;
 
-    intervalCallbacks.at(-1)?.();
+    clock.advance(initialSpinner?.interval ?? 0);
     await setup.renderOnce();
     expect(setup.captureCharFrame()).toContain("B");
 
     setFrames(["A", "B"]);
     expect(encodeUnicode).not.toHaveBeenCalled();
     expect(freeUnicode).not.toHaveBeenCalled();
-    expect(intervalCallbacks).toHaveLength(intervalCount);
-    expect(clearedIntervals).toHaveLength(clearCount);
+    expect(clock.callbacks).toHaveLength(intervalCount + 1);
+    expect(clock.cleared).toHaveLength(clearCount + 1);
     encodeUnicode.mockRestore();
     freeUnicode.mockRestore();
     await setup.renderOnce();
