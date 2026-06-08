@@ -475,7 +475,7 @@ describe("shared spinner scheduler", () => {
     expect(clock.maxActiveTimers).toBe(1);
   });
 
-  it("keeps staggered spinner phases while capping global wake-ups at 60 FPS", () => {
+  it("keeps staggered cadences while capping global wake-ups at 60 FPS", () => {
     const first = createSpinner({ frames: ["A", "B"], interval: 20 });
     const second = createSpinner({ frames: ["X", "Y"], interval: 20 });
     const firstRender = spyOn(first, "requestRender");
@@ -510,6 +510,25 @@ describe("shared spinner scheduler", () => {
     expect(fastRender).toHaveBeenCalledTimes(5);
     expect(slowRender).toHaveBeenCalledTimes(1);
     expect(clock.maxActiveTimers).toBe(1);
+  });
+
+  it("preempts a later wake when a newly started spinner is due earlier", () => {
+    const slow = createSpinner({ frames: ["A", "B"], interval: 100 });
+    const fast = createSpinner({ frames: ["X", "Y"], interval: 20 });
+    const slowRender = spyOn(slow, "requestRender");
+    const fastRender = spyOn(fast, "requestRender");
+
+    slow.start();
+    clock.advance(10);
+    fast.start();
+
+    expect(clock.delays).toEqual([100, 20]);
+    expect(clock.activeTimers).toBe(1);
+    expect(clock.maxActiveTimers).toBe(1);
+
+    clock.advance(20);
+    expect(fastRender).toHaveBeenCalledTimes(1);
+    expect(slowRender).not.toHaveBeenCalled();
   });
 
   it("does not reset another spinner when one interval changes", () => {
@@ -581,6 +600,56 @@ describe("shared spinner scheduler", () => {
     expect(requestRender).toHaveBeenCalledTimes(1);
   });
 
+  it("gives a restarted spinner a fresh deadline while another remains active", () => {
+    const anchor = createSpinner({ interval: 20 });
+    const restarted = createSpinner({ frames: ["A", "B"], interval: 100 });
+    const requestRender = spyOn(restarted, "requestRender");
+    anchor.start();
+    restarted.start();
+
+    clock.advance(10);
+    restarted.stop();
+    restarted.start();
+
+    clock.advance(90);
+    expect(requestRender).not.toHaveBeenCalled();
+    clock.advance(10);
+    expect(requestRender).not.toHaveBeenCalled();
+    clock.advance(MIN_SPINNER_INTERVAL);
+    expect(requestRender).toHaveBeenCalledTimes(1);
+  });
+
+  it("fuzzes restart deadlines with another active spinner", () => {
+    let state = 0x5eed1234;
+    const random = (): number => {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      return state / 2 ** 32;
+    };
+
+    for (let iteration = 0; iteration < 500; iteration++) {
+      const anchorInterval = 17 + Math.floor(random() * 34);
+      const targetInterval = 100 + Math.floor(random() * 901);
+      const elapsedBeforeRestart = Math.floor(random() * targetInterval);
+      const anchor = createSpinner({ interval: anchorInterval });
+      const restarted = createSpinner({ interval: targetInterval });
+      const requestRender = spyOn(restarted, "requestRender");
+
+      anchor.start();
+      restarted.start();
+      clock.advance(elapsedBeforeRestart);
+      requestRender.mockClear();
+      restarted.stop();
+      restarted.start();
+
+      const oldRemaining = targetInterval - elapsedBeforeRestart;
+      clock.advance(oldRemaining);
+      expect(requestRender).not.toHaveBeenCalled();
+
+      anchor.destroy();
+      restarted.destroy();
+    }
+  });
+
   it("advances only once after a delayed timer delivery", () => {
     const spinner = createSpinner({ frames: ["A", "B", "C"], interval: 80 });
     const requestRender = spyOn(spinner, "requestRender");
@@ -591,6 +660,23 @@ describe("shared spinner scheduler", () => {
 
     expect(requestRender).toHaveBeenCalledTimes(1);
     expect(clock.delays.at(-1)).toBe(80);
+  });
+
+  it("advances every overdue spinner once after delayed delivery", () => {
+    const fast = createSpinner({ frames: ["A", "B"], interval: 20 });
+    const slow = createSpinner({ frames: ["X", "Y"], interval: 100 });
+    const fastRender = spyOn(fast, "requestRender");
+    const slowRender = spyOn(slow, "requestRender");
+    fast.start();
+    slow.start();
+
+    clock.nowValue = 500;
+    clock.callbacks[0]?.();
+
+    expect(fastRender).toHaveBeenCalledTimes(1);
+    expect(slowRender).toHaveBeenCalledTimes(1);
+    expect(clock.activeTimers).toBe(1);
+    expect(clock.delays.at(-1)).toBe(20);
   });
 
   it("continues advancing invisible spinners", () => {

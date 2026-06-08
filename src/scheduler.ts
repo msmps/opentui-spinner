@@ -24,6 +24,7 @@ interface ScheduledSpinner {
 
 interface HeapEntry {
   spinner: object;
+  registration: ScheduledSpinner;
   revision: number;
   nextDueAt: number;
 }
@@ -73,6 +74,7 @@ class SpinnerScheduler {
     this.active.set(spinner, registration);
     this.push({
       spinner,
+      registration,
       revision: registration.revision,
       nextDueAt: registration.nextDueAt,
     });
@@ -88,6 +90,7 @@ class SpinnerScheduler {
     registration.nextDueAt = this.clock.now() + interval;
     this.push({
       spinner,
+      registration,
       revision: registration.revision,
       nextDueAt: registration.nextDueAt,
     });
@@ -153,7 +156,12 @@ class SpinnerScheduler {
       if (!entry) break;
 
       const registration = this.active.get(entry.spinner);
-      if (!registration || registration.revision !== entry.revision) continue;
+      if (
+        registration !== entry.registration ||
+        registration.revision !== entry.revision
+      ) {
+        continue;
+      }
 
       registration.advance();
 
@@ -164,6 +172,7 @@ class SpinnerScheduler {
       registration.nextDueAt = now + registration.interval;
       this.push({
         spinner: entry.spinner,
+        registration,
         revision: registration.revision,
         nextDueAt: registration.nextDueAt,
       });
@@ -175,7 +184,10 @@ class SpinnerScheduler {
 
   private isCurrent(entry: HeapEntry): boolean {
     const registration = this.active.get(entry.spinner);
-    return registration?.revision === entry.revision;
+    return (
+      registration === entry.registration &&
+      registration.revision === entry.revision
+    );
   }
 
   private discardStaleRoots(): void {
@@ -187,6 +199,7 @@ class SpinnerScheduler {
 
     this.heap = Array.from(this.active, ([spinner, registration]) => ({
       spinner,
+      registration,
       revision: registration.revision,
       nextDueAt: registration.nextDueAt,
     }));
