@@ -27,6 +27,10 @@ export type ColorGenerator = (
  * ```
  */
 export function createPulse(colors: ColorInput[], speed = 1.0): ColorGenerator {
+  if (colors.length === 0) {
+    throw new RangeError("createPulse requires at least one color");
+  }
+
   return (frameIndex: number) => {
     const adjustedFrame = Math.floor(frameIndex * speed);
     const colorIndex = adjustedFrame % colors.length;
@@ -42,6 +46,10 @@ export function createPulse(colors: ColorInput[], speed = 1.0): ColorGenerator {
  * ```
  */
 export function createWave(colors: ColorInput[]): ColorGenerator {
+  if (colors.length === 0) {
+    throw new RangeError("createWave requires at least one color");
+  }
+
   return (
     frameIndex: number,
     charIndex: number,

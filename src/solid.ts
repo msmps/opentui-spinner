@@ -1,4 +1,4 @@
-import { extend } from "@opentui/solid";
+import { extend } from "@opentui/solid/components";
 import { SpinnerRenderable } from "./index";
 
 // Add TypeScript support
@@ -9,4 +9,8 @@ declare module "@opentui/solid" {
 }
 
 // Register the component
-extend({ spinner: SpinnerRenderable });
+export function registerSpinner(): void {
+  extend({ spinner: SpinnerRenderable });
+}
+
+registerSpinner();

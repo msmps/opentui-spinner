@@ -60,12 +60,16 @@ export class SpinnerRenderable extends Renderable {
     super(ctx, options);
 
     this._name = options.name;
-    this._frames = this._name
-      ? spinners[this._name].frames
-      : (options.frames ?? this._defaultOptions.frames);
-    this._interval = this._name
-      ? spinners[this._name].interval
-      : (options.interval ?? this._defaultOptions.interval);
+    this._frames = options.frames?.length
+      ? options.frames
+      : this._name
+        ? spinners[this._name].frames
+        : this._defaultOptions.frames;
+    this._interval =
+      options.interval ??
+      (this._name
+        ? spinners[this._name].interval
+        : this._defaultOptions.interval);
     this._autoplay = options.autoplay ?? this._defaultOptions.autoplay;
     this._backgroundColor =
       options.backgroundColor ?? this._defaultOptions.backgroundColor;
@@ -85,6 +89,8 @@ export class SpinnerRenderable extends Renderable {
     let maxFrameWidth = 0;
 
     for (const frame of this._frames) {
+      if (this._encodedFrames[frame]) continue;
+
       const encoded = this._lib.encodeUnicode(frame, this.ctx.widthMethod);
       if (encoded) {
         this._encodedFrames[frame] = encoded;
@@ -112,9 +118,10 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public set interval(value: number) {
-    this.stop();
+    const wasRunning = this._intervalId !== null;
+    if (wasRunning) this.stop();
     this._interval = value;
-    this.start();
+    if (wasRunning) this.start();
   }
 
   public get name(): SpinnerName | undefined {
@@ -122,6 +129,8 @@ export class SpinnerRenderable extends Renderable {
   }
 
   public set name(value: SpinnerName | undefined) {
+    const wasRunning = this._intervalId !== null;
+    if (wasRunning) this.stop();
     this._freeFrames();
     this._name = value;
     this._frames = this._name
@@ -130,8 +139,10 @@ export class SpinnerRenderable extends Renderable {
     this._interval = this._name
       ? spinners[this._name].interval
       : this._defaultOptions.interval;
+    this._currentFrameIndex = 0;
 
     this._encodeFrames();
+    if (wasRunning) this.start();
     this.requestRender();
   }
 
@@ -142,6 +153,7 @@ export class SpinnerRenderable extends Renderable {
   public set frames(value: string[]) {
     this._freeFrames();
     this._frames = value.length === 0 ? this._defaultOptions.frames : value;
+    this._currentFrameIndex = 0;
     this._encodeFrames();
 
     this.requestRender();
@@ -163,6 +175,19 @@ export class SpinnerRenderable extends Renderable {
   public set backgroundColor(value: ColorInput) {
     this._backgroundColor = value;
     this.requestRender();
+  }
+
+  public get autoplay(): boolean {
+    return this._autoplay;
+  }
+
+  public set autoplay(value: boolean) {
+    this._autoplay = value;
+    if (value) {
+      this.start();
+    } else {
+      this.stop();
+    }
   }
 
   public start(): void {

@@ -45,7 +45,13 @@
   "scripts": {
     "build": "tsdown",
     "lint": "biome check .",
-    "lint:fix": "biome check . --write"
+    "lint:fix": "biome check . --write",
+    "test": "bun run test:core && bun run test:react && bun run test:solid",
+    "test:core": "bun test tests/core",
+    "test:react": "bun test tests/react",
+    "test:solid": "bun test --preload @opentui/solid/preload tests/solid",
+    "test:coverage": "bun test --coverage tests/core tests/react && bun test --coverage --preload @opentui/solid/preload tests/solid",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests/solid/tsconfig.json"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.4",
@@ -53,6 +59,9 @@
     "@opentui/react": "^0.3.4",
     "@opentui/solid": "^0.3.4",
     "@types/bun": "latest",
+    "@types/react": "^19.2.0",
+    "react": "^19.2.0",
+    "solid-js": "1.9.12",
     "tsdown": "^0.16.0"
   },
   "peerDependencies": {

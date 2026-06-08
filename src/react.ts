@@ -9,4 +9,8 @@ declare module "@opentui/react" {
 }
 
 // Register the component
-extend({ spinner: SpinnerRenderable });
+export function registerSpinner(): void {
+  extend({ spinner: SpinnerRenderable });
+}
+
+registerSpinner();
