@@ -45,7 +45,7 @@ export class SpinnerRenderable extends Renderable {
   > = {};
 
   private _lib: RenderLib = resolveRenderLib();
-  private _intervalId: NodeJS.Timeout | null = null;
+  private _intervalId: ReturnType<typeof setInterval> | null = null;
 
   protected _defaultOptions = {
     name: "dots",
@@ -71,9 +71,6 @@ export class SpinnerRenderable extends Renderable {
       options.backgroundColor ?? this._defaultOptions.backgroundColor;
     this._color = options.color ?? this._defaultOptions.color;
 
-    // Calculate max frame width and set dimensions
-    const maxFrameWidth = Math.max(...this._frames.map((f) => f.length));
-    this.width = maxFrameWidth;
     this.height = 1;
 
     // Pre-encode frames
@@ -85,12 +82,20 @@ export class SpinnerRenderable extends Renderable {
   }
 
   private _encodeFrames(): void {
+    let maxFrameWidth = 0;
+
     for (const frame of this._frames) {
       const encoded = this._lib.encodeUnicode(frame, this.ctx.widthMethod);
       if (encoded) {
         this._encodedFrames[frame] = encoded;
+        maxFrameWidth = Math.max(
+          maxFrameWidth,
+          encoded.data.reduce((width, char) => width + char.width, 0),
+        );
       }
     }
+
+    this.width = maxFrameWidth;
   }
 
   private _freeFrames(): void {
@@ -126,9 +131,6 @@ export class SpinnerRenderable extends Renderable {
       ? spinners[this._name].interval
       : this._defaultOptions.interval;
 
-    // Update width based on new frames
-    const maxFrameWidth = Math.max(...this._frames.map((f) => f.length));
-    this.width = maxFrameWidth;
     this._encodeFrames();
     this.requestRender();
   }
@@ -141,10 +143,6 @@ export class SpinnerRenderable extends Renderable {
     this._freeFrames();
     this._frames = value.length === 0 ? this._defaultOptions.frames : value;
     this._encodeFrames();
-
-    // Update width based on new frames
-    const maxFrameWidth = Math.max(...this._frames.map((f) => f.length));
-    this.width = maxFrameWidth;
 
     this.requestRender();
   }
