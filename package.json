@@ -46,10 +46,11 @@
     "build": "tsdown",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
-    "test": "bun run test:core && bun run test:react && bun run test:solid",
+    "test": "bun run test:core && bun run test:react && bun run test:solid && bun run test:package",
     "test:core": "bun test tests/core",
     "test:react": "bun test tests/react",
     "test:solid": "bun test --preload @opentui/solid/preload tests/solid",
+    "test:package": "bun run build && bun test tests/package",
     "test:coverage": "bun test --coverage tests/core tests/react && bun test --coverage --preload @opentui/solid/preload tests/solid",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests/solid/tsconfig.json"
   },

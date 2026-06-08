@@ -32,6 +32,7 @@
     "src/utils.ts",
     "src/react.ts",
     "tests/core/**/*.ts",
+    "tests/package/**/*.ts",
     "tests/react/**/*.tsx"
   ],
   "exclude": ["dist", "tests/solid"]
