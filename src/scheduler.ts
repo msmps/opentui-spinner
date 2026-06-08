@@ -16,17 +16,10 @@ export function validateSpinnerInterval(interval: number): number {
 }
 
 interface ScheduledSpinner {
-  revision: number;
+  spinner: object;
   interval: number;
   nextDueAt: number;
   advance: () => void;
-}
-
-interface HeapEntry {
-  spinner: object;
-  registration: ScheduledSpinner;
-  revision: number;
-  nextDueAt: number;
 }
 
 export interface SpinnerSchedulerClock {
@@ -46,7 +39,7 @@ const systemClock: SpinnerSchedulerClock = {
 
 class SpinnerScheduler {
   private readonly active = new Map<object, ScheduledSpinner>();
-  private heap: HeapEntry[] = [];
+  private heap: ScheduledSpinner[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
   private timerDueAt = 0;
   private generation = 0;
@@ -66,18 +59,13 @@ class SpinnerScheduler {
     if (this.active.has(spinner)) return;
 
     const registration = {
-      revision: 0,
+      spinner,
       interval,
       nextDueAt: this.clock.now() + interval,
       advance,
     };
     this.active.set(spinner, registration);
-    this.push({
-      spinner,
-      registration,
-      revision: registration.revision,
-      nextDueAt: registration.nextDueAt,
-    });
+    this.push(registration);
     this.armNext();
   }
 
@@ -85,15 +73,14 @@ class SpinnerScheduler {
     const registration = this.active.get(spinner);
     if (!registration) return;
 
-    registration.revision++;
-    registration.interval = interval;
-    registration.nextDueAt = this.clock.now() + interval;
-    this.push({
+    const replacement = {
       spinner,
-      registration,
-      revision: registration.revision,
-      nextDueAt: registration.nextDueAt,
-    });
+      interval,
+      nextDueAt: this.clock.now() + interval,
+      advance: registration.advance,
+    };
+    this.active.set(spinner, replacement);
+    this.push(replacement);
     this.compactIfNeeded();
     this.armNext();
   }
@@ -130,12 +117,11 @@ class SpinnerScheduler {
   }
 
   private cancelTimer(): void {
-    this.generation++;
     if (this.timer === null) return;
 
+    this.generation++;
     this.clock.clearInterval(this.timer);
     this.timer = null;
-    this.timerDueAt = 0;
   }
 
   private tick(generation: number): void {
@@ -144,7 +130,6 @@ class SpinnerScheduler {
     const timer = this.timer;
     this.generation++;
     this.timer = null;
-    this.timerDueAt = 0;
     this.clock.clearInterval(timer);
 
     const now = this.clock.now();
@@ -152,42 +137,23 @@ class SpinnerScheduler {
     this.discardStaleRoots();
 
     while (this.heap[0] && this.heap[0].nextDueAt <= now) {
-      const entry = this.pop();
-      if (!entry) break;
-
-      const registration = this.active.get(entry.spinner);
-      if (
-        registration !== entry.registration ||
-        registration.revision !== entry.revision
-      ) {
-        continue;
-      }
+      const registration = this.pop();
+      if (!registration || !this.isCurrent(registration)) continue;
 
       registration.advance();
 
-      if (this.active.get(entry.spinner) !== registration) continue;
-      if (registration.revision !== entry.revision) continue;
+      if (!this.isCurrent(registration)) continue;
 
-      registration.revision++;
       registration.nextDueAt = now + registration.interval;
-      this.push({
-        spinner: entry.spinner,
-        registration,
-        revision: registration.revision,
-        nextDueAt: registration.nextDueAt,
-      });
+      this.push(registration);
     }
 
     this.compactIfNeeded();
     this.armNext();
   }
 
-  private isCurrent(entry: HeapEntry): boolean {
-    const registration = this.active.get(entry.spinner);
-    return (
-      registration === entry.registration &&
-      registration.revision === entry.revision
-    );
+  private isCurrent(registration: ScheduledSpinner): boolean {
+    return this.active.get(registration.spinner) === registration;
   }
 
   private discardStaleRoots(): void {
@@ -197,18 +163,13 @@ class SpinnerScheduler {
   private compactIfNeeded(): void {
     if (this.heap.length <= this.active.size * 2 + 16) return;
 
-    this.heap = Array.from(this.active, ([spinner, registration]) => ({
-      spinner,
-      registration,
-      revision: registration.revision,
-      nextDueAt: registration.nextDueAt,
-    }));
+    this.heap = Array.from(this.active.values());
     for (let i = Math.floor(this.heap.length / 2) - 1; i >= 0; i--) {
       this.siftDown(i);
     }
   }
 
-  private push(entry: HeapEntry): void {
+  private push(entry: ScheduledSpinner): void {
     this.heap.push(entry);
     let index = this.heap.length - 1;
 
@@ -221,7 +182,7 @@ class SpinnerScheduler {
     this.heap[index] = entry;
   }
 
-  private pop(): HeapEntry | undefined {
+  private pop(): ScheduledSpinner | undefined {
     const root = this.heap[0];
     const last = this.heap.pop();
     if (!root || !last || this.heap.length === 0) return root;
