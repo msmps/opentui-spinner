@@ -13,6 +13,7 @@ import {
   builtInSpinnerNames,
   customSpinners,
   exampleDefinitions,
+  exitAfterRendererDestroy,
   galleryPageSize,
   opencodeFrames,
   scannerFrames,
@@ -80,9 +81,7 @@ class CoreExamples {
   }
 
   private onKey(key: KeyEvent): void {
-    if (key.ctrl && key.name === "c") {
-      this.renderer.destroy();
-    } else if (key.name === "`") {
+    if (key.name === "`") {
       this.renderer.console.toggle();
     } else if (key.name === ".") {
       this.renderer.toggleDebugOverlay();
@@ -236,5 +235,7 @@ class CoreExamples {
   }
 }
 
-const renderer = await createCliRenderer({ exitOnCtrlC: false });
+const renderer = await createCliRenderer({
+  onDestroy: exitAfterRendererDestroy,
+});
 new CoreExamples(renderer);

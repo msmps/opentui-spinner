@@ -7,6 +7,7 @@ import {
   builtInSpinnerNames,
   customSpinners,
   exampleDefinitions,
+  exitAfterRendererDestroy,
   galleryPageSize,
   opencodeFrames,
   scannerFrames,
@@ -133,8 +134,7 @@ function App() {
   const [selected, setSelected] = useState(-1);
   renderer.consoleMode = "console-overlay";
   useKeyboard((key) => {
-    if (key.ctrl && key.name === "c") renderer.destroy();
-    else if (key.name === "escape") setSelected(-1);
+    if (key.name === "escape") setSelected(-1);
     else if (key.name === "`") renderer.console.toggle();
     else if (key.name === ".") renderer.toggleDebugOverlay();
     else if (key.ctrl && key.name === "g") renderer.dumpHitGrid();
@@ -177,5 +177,7 @@ function App() {
   );
 }
 
-const renderer = await createCliRenderer({ exitOnCtrlC: false });
+const renderer = await createCliRenderer({
+  onDestroy: exitAfterRendererDestroy,
+});
 createRoot(renderer).render(<App />);

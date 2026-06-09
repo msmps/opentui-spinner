@@ -1,6 +1,10 @@
 import spinners from "cli-spinners";
 import { createPulse, createWave, type SpinnerOptions } from "../src/index";
 
+export function exitAfterRendererDestroy(): void {
+  queueMicrotask(() => process.exit(0));
+}
+
 export const builtInSpinnerNames = Object.keys(spinners).sort() as Array<
   keyof typeof spinners
 >;
