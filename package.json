@@ -46,6 +46,7 @@
     "build": "tsdown",
     "bench": "bun bench/scheduler-benchmark.ts",
     "bench:quick": "bun bench/scheduler-benchmark.ts --rounds=3 --min-sample-ms=100 --warmup=200",
+    "profile": "bun profile/spinner-cpu-profile.ts",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "test": "bun run test:core && bun run test:react && bun run test:solid && bun run test:package",

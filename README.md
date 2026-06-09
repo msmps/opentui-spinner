@@ -219,6 +219,19 @@ second, 95% relative margin of error, and maximum active timers. JSON output
 includes every sample, runtime and CPU information, Git state, and a correctness
 checksum for same-machine comparisons between revisions.
 
+Profile real spinner rendering with Bun's CPU profiler:
+
+```bash
+bun --cpu-prof --cpu-prof-md --cpu-prof-dir ./profiles \
+  profile/spinner-cpu-profile.ts \
+  --count=100 --duration-ms=15000 --interval=80 --mode=staggered
+```
+
+The profiling scenario uses OpenTUI's test renderer with native timers and
+reports process CPU time, spinner render requests, rendered frames, effective
+FPS, and whether rendering stayed within OpenTUI's configured 60 FPS limit.
+Available modes are `aligned`, `staggered`, and `mixed`.
+
 ## Available Spinners
 
 The library includes 80+ spinners from [cli-spinners](https://github.com/sindresorhus/cli-spinners). Popular choices include:

@@ -29,6 +29,7 @@
   },
   "include": [
     "bench/**/*.ts",
+    "profile/**/*.ts",
     "src/index.ts",
     "src/utils.ts",
     "src/react.ts",
