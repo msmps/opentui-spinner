@@ -13,7 +13,6 @@ import {
   builtInSpinnerNames,
   customSpinners,
   exampleDefinitions,
-  exitAfterRendererDestroy,
   galleryPageSize,
   opencodeFrames,
   scannerFrames,
@@ -235,7 +234,5 @@ class CoreExamples {
   }
 }
 
-const renderer = await createCliRenderer({
-  onDestroy: exitAfterRendererDestroy,
-});
+const renderer = await createCliRenderer();
 new CoreExamples(renderer);

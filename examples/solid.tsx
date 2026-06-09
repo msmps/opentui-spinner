@@ -5,7 +5,6 @@ import {
   builtInSpinnerNames,
   customSpinners,
   exampleDefinitions,
-  exitAfterRendererDestroy,
   galleryPageSize,
   opencodeFrames,
   scannerFrames,
@@ -192,4 +191,4 @@ function App() {
   );
 }
 
-await render(() => <App />, { onDestroy: exitAfterRendererDestroy });
+await render(() => <App />);

@@ -7,7 +7,6 @@ import {
   builtInSpinnerNames,
   customSpinners,
   exampleDefinitions,
-  exitAfterRendererDestroy,
   galleryPageSize,
   opencodeFrames,
   scannerFrames,
@@ -177,7 +176,5 @@ function App() {
   );
 }
 
-const renderer = await createCliRenderer({
-  onDestroy: exitAfterRendererDestroy,
-});
+const renderer = await createCliRenderer();
 createRoot(renderer).render(<App />);

@@ -34,7 +34,11 @@ export interface SpinnerSchedulerClock {
 
 const systemClock: SpinnerSchedulerClock = {
   now: () => performance.now(),
-  setInterval: (callback, delay) => setInterval(callback, delay),
+  setInterval: (callback, delay) => {
+    const handle = setInterval(callback, delay);
+    handle.unref();
+    return handle;
+  },
   clearInterval: (handle) => clearInterval(handle),
 };
 
