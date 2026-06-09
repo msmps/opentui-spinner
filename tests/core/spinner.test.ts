@@ -582,7 +582,7 @@ describe("shared spinner scheduler", () => {
     expect(clock.maxActiveTimers).toBe(1);
   });
 
-  it("keeps staggered cadences while capping global wake-ups at 60 FPS", () => {
+  it("caps staggered global wake-ups at 60 FPS", () => {
     const first = createSpinner({ frames: ["A", "B"], interval: 20 });
     const second = createSpinner({ frames: ["X", "Y"], interval: 20 });
     const firstRender = spyOn(first, "requestRender");
