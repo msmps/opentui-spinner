@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@opentui/react"
+  },
+  "include": [
+    "index.ts",
+    "shared.ts",
+    "react.tsx",
+    "knight-rider/**/*.ts",
+    "opencode/**/*.ts",
+    "../src/index.ts",
+    "../src/react.ts",
+    "../src/utils.ts"
+  ],
+  "exclude": ["solid.tsx"]
+}

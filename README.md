@@ -35,6 +35,20 @@ bun add opentui-spinner @opentui/core @opentui/solid solid-js
 
 ## Usage
 
+### Interactive Examples
+
+Each launcher includes a chooser, every built-in spinner, custom animations,
+and shared console/debug controls:
+
+```bash
+bun run examples
+bun run examples:react
+bun run examples:solid
+```
+
+Use `Escape` to return to the chooser, backtick to toggle the console, `.` to
+toggle the debug overlay, `Ctrl+G` to dump the hit grid, and `Ctrl+C` to exit.
+
 ### Basic Usage (Core)
 
 ```typescript

@@ -46,6 +46,9 @@
     "build": "tsdown",
     "bench": "bun bench/scheduler-benchmark.ts",
     "bench:quick": "bun bench/scheduler-benchmark.ts --rounds=3 --min-sample-ms=100 --warmup=200",
+    "examples": "bun examples/",
+    "examples:react": "bun examples/react.tsx",
+    "examples:solid": "bun --preload @opentui/solid/preload examples/solid.tsx",
     "profile": "bun profile/spinner-cpu-profile.ts",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
@@ -55,7 +58,7 @@
     "test:solid": "bun test --preload @opentui/solid/preload tests/solid",
     "test:package": "bun run build && bun test tests/package",
     "test:coverage": "bun test --coverage tests/core tests/react && bun test --coverage --preload @opentui/solid/preload tests/solid",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tests/solid/tsconfig.json"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests/solid/tsconfig.json && tsc --noEmit -p examples/tsconfig.json && tsc --noEmit -p examples/tsconfig.solid.json"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.4",
