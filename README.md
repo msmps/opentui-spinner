@@ -35,6 +35,20 @@ bun add opentui-spinner @opentui/core @opentui/solid solid-js
 
 ## Usage
 
+### Interactive Examples
+
+Each launcher includes a chooser, every built-in spinner, custom animations,
+and shared console/debug controls:
+
+```bash
+bun run examples
+bun run examples:react
+bun run examples:solid
+```
+
+Use `Escape` to return to the chooser, backtick to toggle the console, `.` to
+toggle the debug overlay, `Ctrl+G` to dump the hit grid, and `Ctrl+C` to exit.
+
 ### Basic Usage (Core)
 
 ```typescript
@@ -145,7 +159,7 @@ render(() => <App />);
 | ----------------- | ------------------------------ | --------------- | -------------------------------------------- |
 | `name`            | `SpinnerName`                  | `"dots"`        | Name of a built-in spinner from cli-spinners |
 | `frames`          | `string[]`                     | -               | Custom animation frames (overrides `name`)   |
-| `interval`        | `number`                       | -               | Time between frames in milliseconds          |
+| `interval`        | `number`                       | -               | Target frame interval from 16.67-1000ms       |
 | `autoplay`        | `boolean`                      | `true`          | Whether to start playing automatically       |
 | `color`           | `ColorInput \| ColorGenerator` | `"white"`       | Foreground color or color generator function |
 | `backgroundColor` | `ColorInput`                   | `"transparent"` | Background color                             |
@@ -191,6 +205,49 @@ spinner.frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇",
 // Adjust interval
 spinner.interval = 100;
 ```
+
+Intervals must be finite numbers from `1000 / 60` through `1000`
+milliseconds, inclusive. Invalid constructor values and property updates throw a
+`RangeError`. All running spinners share one adaptive scheduler interval,
+including across multiple OpenTUI renderers in the same process. Scheduler
+wake-ups are globally capped at 60 FPS, so staggered spinners can be delayed and
+run below their configured rate. Invisible spinners are suspended until shown
+and do not advance frames or request renders while hidden.
+
+## Performance Benchmark
+
+Run the calibrated scheduler benchmark:
+
+```bash
+bun run bench -- --json=bench/results/latest.json
+```
+
+For a faster local smoke run:
+
+```bash
+bun run bench:quick
+```
+
+The benchmark compares the adaptive heap scheduler with its heap-only behavior,
+equivalent shared linear-scan workloads, and a per-spinner timer lifecycle
+baseline. It reports median and p95 nanoseconds per operation, operations per
+second, 95% relative margin of error, and maximum active timers. JSON output
+includes every sample, runtime and CPU information, Git state, and a correctness
+checksum derived from the verified scheduler behavior trace. The checksum is
+independent of benchmark timing, calibration, and selected scenarios.
+
+Profile real spinner rendering with Bun's CPU profiler:
+
+```bash
+bun --cpu-prof --cpu-prof-md --cpu-prof-dir ./profiles \
+  profile/spinner-cpu-profile.ts \
+  --count=100 --duration-ms=15000 --interval=80 --mode=staggered
+```
+
+The profiling scenario uses OpenTUI's test renderer with native timers and
+reports process CPU time, spinner render requests, rendered frames, effective
+FPS, and whether rendering stayed within OpenTUI's configured 60 FPS limit.
+Available modes are `aligned`, `hidden`, `staggered`, and `mixed`.
 
 ## Available Spinners
 
