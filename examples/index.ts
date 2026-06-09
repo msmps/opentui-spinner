@@ -1,12 +1,12 @@
 import {
   BoxRenderable,
+  CliRenderEvents,
   createCliRenderer,
-  type KeyEvent,
   TextRenderable,
 } from "@opentui/core";
 import { SpinnerRenderable } from "../src/index";
 
-const renderer = await createCliRenderer({ exitOnCtrlC: false });
+const renderer = await createCliRenderer();
 
 const container = new BoxRenderable(renderer, {
   border: true,
@@ -42,11 +42,4 @@ const interval = setInterval(() => {
   step = (step + 1) % loadingSteps.length;
 }, 1000);
 
-renderer.keyInput.on("keypress", (key: KeyEvent) => {
-  switch (key.raw) {
-    case "\u0003":
-      clearInterval(interval);
-      renderer.destroy();
-      break;
-  }
-});
+renderer.once(CliRenderEvents.DESTROY, () => clearInterval(interval));
