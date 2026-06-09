@@ -198,6 +198,27 @@ milliseconds, inclusive. Invalid constructor values and property updates throw a
 retaining independent animation timing, including across multiple OpenTUI
 renderers in the same process.
 
+## Performance Benchmark
+
+Run the calibrated scheduler benchmark:
+
+```bash
+bun run bench -- --json=bench/results/latest.json
+```
+
+For a faster local smoke run:
+
+```bash
+bun run bench:quick
+```
+
+The benchmark compares the adaptive heap scheduler with equivalent shared
+linear-scan workloads and a per-spinner timer lifecycle baseline. It reports
+median and p95 nanoseconds per operation, operations per second, 95% relative
+margin of error, and maximum active timers. JSON output includes every sample,
+runtime and CPU information, Git state, and a correctness checksum for
+same-machine comparisons between revisions.
+
 ## Available Spinners
 
 The library includes 80+ spinners from [cli-spinners](https://github.com/sindresorhus/cli-spinners). Popular choices include:

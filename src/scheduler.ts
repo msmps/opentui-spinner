@@ -37,14 +37,18 @@ const systemClock: SpinnerSchedulerClock = {
   clearInterval: (handle) => clearInterval(handle),
 };
 
-class SpinnerScheduler {
+export class SpinnerScheduler {
   private readonly active = new Map<object, ScheduledSpinner>();
   private heap: ScheduledSpinner[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
   private timerDueAt = 0;
   private generation = 0;
   private lastWakeAt = Number.NEGATIVE_INFINITY;
-  private clock: SpinnerSchedulerClock = systemClock;
+  private clock: SpinnerSchedulerClock;
+
+  public constructor(clock: SpinnerSchedulerClock = systemClock) {
+    this.clock = clock;
+  }
 
   public setClock(clock: SpinnerSchedulerClock): void {
     if (this.active.size > 0 || this.timer !== null) {

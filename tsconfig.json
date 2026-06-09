@@ -28,6 +28,7 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "include": [
+    "bench/**/*.ts",
     "src/index.ts",
     "src/utils.ts",
     "src/react.ts",
