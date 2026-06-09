@@ -6,7 +6,7 @@ interface ProfileArgs {
   count: number;
   durationMs: number;
   interval: number;
-  mode: "aligned" | "staggered" | "mixed";
+  mode: "aligned" | "hidden" | "staggered" | "mixed";
 }
 
 function positiveInteger(value: string | undefined, fallback: number): number {
@@ -30,7 +30,12 @@ function parseArgs(argv: string[]): ProfileArgs {
     }),
   );
   const mode = values.get("mode") ?? "aligned";
-  if (mode !== "aligned" && mode !== "staggered" && mode !== "mixed") {
+  if (
+    mode !== "aligned" &&
+    mode !== "hidden" &&
+    mode !== "staggered" &&
+    mode !== "mixed"
+  ) {
     throw new Error(`Invalid mode: ${mode}`);
   }
   return {
@@ -76,6 +81,7 @@ for (let index = 0; index < args.count; index++) {
   };
   renderer.root.add(spinner);
   spinner.start();
+  if (args.mode === "hidden") spinner.visible = false;
   spinners.push(spinner);
 
   if (args.mode === "staggered") {

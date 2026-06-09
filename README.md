@@ -196,7 +196,8 @@ Intervals must be finite numbers from `1000 / 60` through `1000`
 milliseconds, inclusive. Invalid constructor values and property updates throw a
 `RangeError`. All running spinners share one adaptive scheduler interval while
 retaining independent animation timing, including across multiple OpenTUI
-renderers in the same process.
+renderers in the same process. Invisible spinners are suspended until shown and
+do not advance frames or request renders while hidden.
 
 ## Performance Benchmark
 
@@ -230,7 +231,7 @@ bun --cpu-prof --cpu-prof-md --cpu-prof-dir ./profiles \
 The profiling scenario uses OpenTUI's test renderer with native timers and
 reports process CPU time, spinner render requests, rendered frames, effective
 FPS, and whether rendering stayed within OpenTUI's configured 60 FPS limit.
-Available modes are `aligned`, `staggered`, and `mixed`.
+Available modes are `aligned`, `hidden`, `staggered`, and `mixed`.
 
 ## Available Spinners
 

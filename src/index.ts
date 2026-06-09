@@ -7,6 +7,7 @@ import {
   type RenderableOptions,
   type RenderContext,
   type RenderLib,
+  type RGBA,
   resolveRenderLib,
 } from "@opentui/core";
 
@@ -43,7 +44,9 @@ export class SpinnerRenderable extends Renderable {
   private _interval: number;
   private _autoplay: boolean;
   private _backgroundColor: ColorInput;
+  private _parsedBackgroundColor: RGBA;
   private _color: ColorInput | ColorGenerator;
+  private _parsedColor: RGBA;
 
   // Internals
   private _currentFrameIndex: number = 0;
@@ -89,7 +92,12 @@ export class SpinnerRenderable extends Renderable {
     this._autoplay = options.autoplay ?? this._defaultOptions.autoplay;
     this._backgroundColor =
       options.backgroundColor ?? this._defaultOptions.backgroundColor;
+    this._parsedBackgroundColor = parseColor(this._backgroundColor);
     this._color = options.color ?? this._defaultOptions.color;
+    this._parsedColor =
+      typeof this._color === "function"
+        ? parseColor(this._defaultOptions.color)
+        : parseColor(this._color);
 
     this.height = 1;
 
@@ -159,7 +167,7 @@ export class SpinnerRenderable extends Renderable {
       this._frames = frames;
       this._currentFrameIndex = 0;
       this._encodeFrames();
-      this.requestRender();
+      if (this.visible) this.requestRender();
     }
 
     if (this._isRunning && intervalChanged) {
@@ -183,7 +191,7 @@ export class SpinnerRenderable extends Renderable {
     this._currentFrameIndex = 0;
     this._encodeFrames();
 
-    this.requestRender();
+    if (this.visible) this.requestRender();
   }
 
   public get color(): ColorInput | ColorGenerator {
@@ -192,7 +200,8 @@ export class SpinnerRenderable extends Renderable {
 
   public set color(value: ColorInput | ColorGenerator) {
     this._color = value;
-    this.requestRender();
+    if (typeof value !== "function") this._parsedColor = parseColor(value);
+    if (this.visible) this.requestRender();
   }
 
   public get backgroundColor(): ColorInput {
@@ -201,7 +210,25 @@ export class SpinnerRenderable extends Renderable {
 
   public set backgroundColor(value: ColorInput) {
     this._backgroundColor = value;
-    this.requestRender();
+    this._parsedBackgroundColor = parseColor(value);
+    if (this.visible) this.requestRender();
+  }
+
+  public override get visible(): boolean {
+    return super.visible;
+  }
+
+  public override set visible(value: boolean) {
+    if (value === super.visible) return;
+
+    super.visible = value;
+    if (!this._isRunning) return;
+
+    if (value) {
+      spinnerScheduler.start(this, this._interval, this._advanceFrame);
+    } else {
+      spinnerScheduler.stop(this);
+    }
   }
 
   public get autoplay(): boolean {
@@ -221,7 +248,9 @@ export class SpinnerRenderable extends Renderable {
     if (this._isRunning || this.isDestroyed) return;
 
     this._isRunning = true;
-    spinnerScheduler.start(this, this._interval, this._advanceFrame);
+    if (this.visible) {
+      spinnerScheduler.start(this, this._interval, this._advanceFrame);
+    }
   }
 
   public stop(): void {
@@ -244,20 +273,22 @@ export class SpinnerRenderable extends Renderable {
     for (let i = 0; i < encodedFrame.data.length; i++) {
       const color =
         typeof this._color === "function"
-          ? this._color(
-              this._currentFrameIndex,
-              i,
-              this._frames.length,
-              encodedFrame.data.length,
+          ? parseColor(
+              this._color(
+                this._currentFrameIndex,
+                i,
+                this._frames.length,
+                encodedFrame.data.length,
+              ),
             )
-          : this._color;
+          : this._parsedColor;
 
       buffer.drawChar(
         encodedFrame.data[i].char,
         x,
         this.y,
-        parseColor(color),
-        parseColor(this._backgroundColor),
+        color,
+        this._parsedBackgroundColor,
       );
       x += encodedFrame.data[i].width;
     }

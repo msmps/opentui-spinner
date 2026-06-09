@@ -175,6 +175,25 @@ describe("SpinnerRenderable rendering", () => {
     expect(span?.width).toBe(1);
   });
 
+  it("reuses parsed static colors across characters and renders", async () => {
+    createSpinner({
+      frames: ["AB"],
+      color: "#ff0000",
+      backgroundColor: "#001122",
+    });
+    const drawChar = spyOn(OptimizedBuffer.prototype, "drawChar");
+
+    await setup.renderOnce();
+    await setup.renderOnce();
+
+    const calls = drawChar.mock.calls.filter(
+      (call) => call[0] === "A".charCodeAt(0) || call[0] === "B".charCodeAt(0),
+    );
+    expect(calls.length).toBeGreaterThanOrEqual(4);
+    expect(new Set(calls.map((call) => call[3])).size).toBe(1);
+    expect(new Set(calls.map((call) => call[4])).size).toBe(1);
+  });
+
   it("calls a color generator for each encoded character", async () => {
     const calls: number[][] = [];
     createSpinner({
@@ -743,15 +762,56 @@ describe("shared spinner scheduler", () => {
     expect(clock.maxActiveTimers).toBe(1);
   });
 
-  it("continues advancing invisible spinners", () => {
+  it("suspends invisible spinners without changing running intent", () => {
     const spinner = createSpinner({ frames: ["A", "B"], interval: 80 });
     const requestRender = spyOn(spinner, "requestRender");
+    spinner.start();
     spinner.visible = false;
     requestRender.mockClear();
-    spinner.start();
 
-    clock.advance(80);
+    expect(clock.activeTimers).toBe(0);
+    clock.advance(800);
+    expect(requestRender).not.toHaveBeenCalled();
 
+    spinner.visible = true;
+    requestRender.mockClear();
+    expect(clock.activeTimers).toBe(1);
+    clock.advance(79);
+    expect(requestRender).not.toHaveBeenCalled();
+    clock.advance(1);
+
+    expect(requestRender).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not schedule an invisible autoplay spinner until shown", () => {
+    const spinner = new SpinnerRenderable(renderer, {
+      frames: ["A", "B"],
+      interval: 80,
+      autoplay: true,
+      visible: false,
+    });
+    renderer.root.add(spinner);
+
+    expect(clock.activeTimers).toBe(0);
+
+    spinner.visible = true;
+
+    expect(clock.activeTimers).toBe(1);
+  });
+
+  it("defers hidden visual updates without requesting renders", () => {
+    const spinner = createSpinner({ frames: ["A", "B"] });
+    spinner.visible = false;
+    const requestRender = spyOn(spinner, "requestRender");
+
+    spinner.frames = ["X", "Y"];
+    spinner.name = "line";
+    spinner.color = "red";
+    spinner.backgroundColor = "blue";
+
+    expect(requestRender).not.toHaveBeenCalled();
+
+    spinner.visible = true;
     expect(requestRender).toHaveBeenCalledTimes(1);
   });
 
