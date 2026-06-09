@@ -720,6 +720,29 @@ describe("shared spinner scheduler", () => {
     expect(clock.delays.at(-1)).toBe(20);
   });
 
+  it("advances a dense batch once and keeps one timer active", () => {
+    const spinners = Array.from({ length: 100 }, () =>
+      createSpinner({ frames: ["A", "B"], interval: 80 }),
+    );
+    const requestRenders = spinners.map((spinner) =>
+      spyOn(spinner, "requestRender"),
+    );
+    for (const spinner of spinners) spinner.start();
+
+    clock.advance(80);
+
+    for (const requestRender of requestRenders) {
+      expect(requestRender).toHaveBeenCalledTimes(1);
+    }
+
+    clock.advance(80);
+    for (const requestRender of requestRenders) {
+      expect(requestRender).toHaveBeenCalledTimes(2);
+    }
+    expect(clock.activeTimers).toBe(1);
+    expect(clock.maxActiveTimers).toBe(1);
+  });
+
   it("continues advancing invisible spinners", () => {
     const spinner = createSpinner({ frames: ["A", "B"], interval: 80 });
     const requestRender = spyOn(spinner, "requestRender");

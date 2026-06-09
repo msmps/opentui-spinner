@@ -212,12 +212,12 @@ For a faster local smoke run:
 bun run bench:quick
 ```
 
-The benchmark compares the adaptive heap scheduler with equivalent shared
-linear-scan workloads and a per-spinner timer lifecycle baseline. It reports
-median and p95 nanoseconds per operation, operations per second, 95% relative
-margin of error, and maximum active timers. JSON output includes every sample,
-runtime and CPU information, Git state, and a correctness checksum for
-same-machine comparisons between revisions.
+The benchmark compares the adaptive heap scheduler with its heap-only behavior,
+equivalent shared linear-scan workloads, and a per-spinner timer lifecycle
+baseline. It reports median and p95 nanoseconds per operation, operations per
+second, 95% relative margin of error, and maximum active timers. JSON output
+includes every sample, runtime and CPU information, Git state, and a correctness
+checksum for same-machine comparisons between revisions.
 
 ## Available Spinners
 

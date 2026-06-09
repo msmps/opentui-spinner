@@ -1,5 +1,6 @@
 export const MIN_SPINNER_INTERVAL = 1000 / 60;
 export const MAX_SPINNER_INTERVAL = 1000;
+const DENSE_TICK_THRESHOLD = 16;
 
 export function validateSpinnerInterval(interval: number): number {
   if (
@@ -46,7 +47,10 @@ export class SpinnerScheduler {
   private lastWakeAt = Number.NEGATIVE_INFINITY;
   private clock: SpinnerSchedulerClock;
 
-  public constructor(clock: SpinnerSchedulerClock = systemClock) {
+  public constructor(
+    clock: SpinnerSchedulerClock = systemClock,
+    private readonly denseTickThreshold = DENSE_TICK_THRESHOLD,
+  ) {
     this.clock = clock;
   }
 
@@ -139,6 +143,7 @@ export class SpinnerScheduler {
     const now = this.clock.now();
     this.discardStaleRoots();
     let advanced = false;
+    let dueCount = 0;
 
     while (this.heap[0] && this.heap[0].nextDueAt <= now) {
       const registration = this.pop();
@@ -151,6 +156,24 @@ export class SpinnerScheduler {
 
       registration.nextDueAt = now + registration.interval;
       this.push(registration);
+
+      dueCount++;
+      if (dueCount === this.denseTickThreshold) {
+        const entries = this.heap;
+        this.heap = [];
+        for (const entry of entries) {
+          if (!this.isCurrent(entry)) continue;
+          if (entry.nextDueAt <= now) {
+            entry.advance();
+            advanced = true;
+            if (!this.isCurrent(entry)) continue;
+            entry.nextDueAt = now + entry.interval;
+          }
+          this.heap.push(entry);
+        }
+        this.heapify();
+        break;
+      }
     }
 
     if (advanced) this.lastWakeAt = now;
@@ -170,6 +193,10 @@ export class SpinnerScheduler {
     if (this.heap.length <= this.active.size * 2 + 16) return;
 
     this.heap = Array.from(this.active.values());
+    this.heapify();
+  }
+
+  private heapify(): void {
     for (let i = Math.floor(this.heap.length / 2) - 1; i >= 0; i--) {
       this.siftDown(i);
     }

@@ -221,7 +221,11 @@ class PerSpinnerScheduler implements Scheduler {
   }
 }
 
-type ImplementationName = "adaptive-heap" | "linear-scan" | "per-spinner";
+type ImplementationName =
+  | "adaptive-heap"
+  | "heap-only"
+  | "linear-scan"
+  | "per-spinner";
 
 interface ScenarioInstance {
   runIteration: (iteration: number) => number;
@@ -271,12 +275,15 @@ function makeScheduler(
   clock: BenchmarkClock,
 ): Scheduler {
   if (implementation === "adaptive-heap") return new SpinnerScheduler(clock);
+  if (implementation === "heap-only") {
+    return new SpinnerScheduler(clock, Number.POSITIVE_INFINITY);
+  }
   if (implementation === "linear-scan") return new LinearScheduler(clock);
   return new PerSpinnerScheduler(clock);
 }
 
 function createTickScenario(
-  implementation: "adaptive-heap" | "linear-scan",
+  implementation: "adaptive-heap" | "heap-only" | "linear-scan",
   size: number,
   allDue: boolean,
 ): BenchmarkScenario {
@@ -400,8 +407,10 @@ function createLifecycleScenario(
 const scenarios: BenchmarkScenario[] = [
   ...([10, 100, 1_000] as const).flatMap((size) => [
     createTickScenario("adaptive-heap", size, false),
+    createTickScenario("heap-only", size, false),
     createTickScenario("linear-scan", size, false),
     createTickScenario("adaptive-heap", size, true),
+    createTickScenario("heap-only", size, true),
     createTickScenario("linear-scan", size, true),
     createRescheduleScenario("adaptive-heap", size),
     createRescheduleScenario("linear-scan", size),
@@ -625,7 +634,11 @@ function validateResults(results: BenchmarkResult[]): void {
 function verifyEquivalentBehavior(): void {
   const traces: number[][] = [];
 
-  for (const implementation of ["adaptive-heap", "linear-scan"] as const) {
+  for (const implementation of [
+    "adaptive-heap",
+    "heap-only",
+    "linear-scan",
+  ] as const) {
     const clock = new BenchmarkClock();
     const scheduler = makeScheduler(implementation, clock);
     const spinners = [{}, {}, {}];
@@ -648,7 +661,8 @@ function verifyEquivalentBehavior(): void {
     traces.push(trace);
   }
 
-  if (JSON.stringify(traces[0]) !== JSON.stringify(traces[1])) {
+  const expected = JSON.stringify(traces[0]);
+  if (traces.some((trace) => JSON.stringify(trace) !== expected)) {
     throw new Error(
       `Scheduler implementations produced different traces: ${JSON.stringify(traces)}`,
     );
