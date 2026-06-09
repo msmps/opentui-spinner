@@ -18,6 +18,7 @@ import { SpinnerRenderable } from "../../src/index";
 import {
   MAX_SPINNER_INTERVAL,
   MIN_SPINNER_INTERVAL,
+  SpinnerScheduler,
   setSpinnerSchedulerClockForTesting,
 } from "../../src/scheduler";
 import { FakeSchedulerClock } from "./fake-scheduler-clock";
@@ -496,6 +497,71 @@ describe("SpinnerRenderable animation", () => {
 });
 
 describe("shared spinner scheduler", () => {
+  it("restores scheduling and advances other spinners when a callback throws", () => {
+    const schedulerClock = new FakeSchedulerClock();
+    const scheduler = new SpinnerScheduler(schedulerClock);
+    const failure = new Error("render failed");
+    let healthyAdvances = 0;
+
+    scheduler.start({}, 20, () => {
+      throw failure;
+    });
+    scheduler.start({}, 20, () => healthyAdvances++);
+
+    expect(() => schedulerClock.advance(20)).toThrow(failure);
+    expect(healthyAdvances).toBe(1);
+    expect(schedulerClock.activeTimers).toBe(1);
+    expect(schedulerClock.maxActiveTimers).toBe(1);
+
+    expect(() => schedulerClock.advance(20)).toThrow(failure);
+    expect(healthyAdvances).toBe(2);
+    expect(schedulerClock.activeTimers).toBe(1);
+  });
+
+  it("reports multiple callback failures after restoring scheduling", () => {
+    const schedulerClock = new FakeSchedulerClock();
+    const scheduler = new SpinnerScheduler(schedulerClock);
+    const failures = [new Error("first"), new Error("second")];
+
+    scheduler.start({}, 20, () => {
+      throw failures[0];
+    });
+    scheduler.start({}, 20, () => {
+      throw failures[1];
+    });
+
+    let thrown: unknown;
+    try {
+      schedulerClock.advance(20);
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).errors).toEqual(failures);
+    expect(schedulerClock.activeTimers).toBe(1);
+    expect(schedulerClock.maxActiveTimers).toBe(1);
+  });
+
+  it("isolates callback failures in a dense batch", () => {
+    const schedulerClock = new FakeSchedulerClock();
+    const scheduler = new SpinnerScheduler(schedulerClock);
+    const failure = new Error("dense failure");
+    let attempts = 0;
+
+    for (let index = 0; index < 100; index++) {
+      scheduler.start({}, 20, () => {
+        attempts++;
+        if (index === 50) throw failure;
+      });
+    }
+
+    expect(() => schedulerClock.advance(20)).toThrow(failure);
+    expect(attempts).toBe(100);
+    expect(schedulerClock.activeTimers).toBe(1);
+    expect(schedulerClock.maxActiveTimers).toBe(1);
+  });
+
   it("uses one active interval for multiple spinners", () => {
     const first = createSpinner({ frames: ["A", "B"], interval: 80 });
     const second = createSpinner({ frames: ["X", "Y"], interval: 80 });

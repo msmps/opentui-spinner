@@ -218,7 +218,8 @@ equivalent shared linear-scan workloads, and a per-spinner timer lifecycle
 baseline. It reports median and p95 nanoseconds per operation, operations per
 second, 95% relative margin of error, and maximum active timers. JSON output
 includes every sample, runtime and CPU information, Git state, and a correctness
-checksum for same-machine comparisons between revisions.
+checksum derived from the verified scheduler behavior trace. The checksum is
+independent of benchmark timing, calibration, and selected scenarios.
 
 Profile real spinner rendering with Bun's CPU profiler:
 

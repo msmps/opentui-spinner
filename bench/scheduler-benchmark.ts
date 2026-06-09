@@ -422,10 +422,10 @@ const scenarios: BenchmarkScenario[] = [
   ]),
 ];
 
-let checksum = 0;
+let benchmarkSink = 0;
 
 function consume(value: number): void {
-  checksum = (checksum + (value | 0)) >>> 0;
+  benchmarkSink = (benchmarkSink + (value | 0)) >>> 0;
 }
 
 function parsePositive(value: string | undefined, fallback: number): number {
@@ -631,7 +631,16 @@ function validateResults(results: BenchmarkResult[]): void {
   }
 }
 
-function verifyEquivalentBehavior(): void {
+function hashTrace(trace: readonly number[]): number {
+  let hash = 2166136261;
+  for (const value of trace) {
+    hash ^= value;
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash;
+}
+
+function verifyEquivalentBehavior(): number {
   const traces: number[][] = [];
 
   for (const implementation of [
@@ -667,15 +676,20 @@ function verifyEquivalentBehavior(): void {
       `Scheduler implementations produced different traces: ${JSON.stringify(traces)}`,
     );
   }
+  return hashTrace(traces[0]);
 }
 
 function format(value: number): string {
   return value.toFixed(2);
 }
 
-function printResults(results: BenchmarkResult[], args: BenchmarkArgs): void {
+function printResults(
+  results: BenchmarkResult[],
+  args: BenchmarkArgs,
+  correctnessChecksum: number,
+): void {
   console.log(
-    `scheduler-benchmark warmup=${args.warmupIterations} rounds=${args.rounds} min_sample_ms=${args.minSampleMs} scenarios=${results.length} checksum=${checksum}`,
+    `scheduler-benchmark warmup=${args.warmupIterations} rounds=${args.rounds} min_sample_ms=${args.minSampleMs} scenarios=${results.length} checksum=${correctnessChecksum}`,
   );
   const header = [
     "scenario",
@@ -710,7 +724,11 @@ function printResults(results: BenchmarkResult[], args: BenchmarkArgs): void {
   }
 }
 
-function writeResults(results: BenchmarkResult[], jsonPath: string): void {
+function writeResults(
+  results: BenchmarkResult[],
+  jsonPath: string,
+  correctnessChecksum: number,
+): void {
   const absolutePath = path.resolve(jsonPath);
   const git = (args: string[]): string | undefined => {
     try {
@@ -741,7 +759,7 @@ function writeResults(results: BenchmarkResult[], jsonPath: string): void {
             branch: git(["branch", "--show-current"]),
             dirty: Boolean(git(["status", "--porcelain"])),
           },
-          checksum,
+          correctnessChecksum,
         },
         results,
       },
@@ -757,13 +775,13 @@ if (args.listScenarios) {
     console.log(`${scenario.name}\t${scenario.description}`);
   }
 } else {
-  verifyEquivalentBehavior();
+  const correctnessChecksum = verifyEquivalentBehavior();
   const selected = args.scenarioNames
     ? scenarios.filter((scenario) => args.scenarioNames?.has(scenario.name))
     : scenarios;
   if (selected.length === 0) throw new Error("No benchmark scenarios matched");
   const results = selected.map((scenario) => runScenario(scenario, args));
   validateResults(results);
-  printResults(results, args);
-  if (args.jsonPath) writeResults(results, args.jsonPath);
+  printResults(results, args, correctnessChecksum);
+  if (args.jsonPath) writeResults(results, args.jsonPath, correctnessChecksum);
 }

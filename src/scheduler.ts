@@ -144,12 +144,17 @@ export class SpinnerScheduler {
     this.discardStaleRoots();
     let advanced = false;
     let dueCount = 0;
+    const errors: unknown[] = [];
 
     while (this.heap[0] && this.heap[0].nextDueAt <= now) {
       const registration = this.pop();
       if (!registration || !this.isCurrent(registration)) continue;
 
-      registration.advance();
+      try {
+        registration.advance();
+      } catch (error) {
+        errors.push(error);
+      }
       advanced = true;
 
       if (!this.isCurrent(registration)) continue;
@@ -164,7 +169,11 @@ export class SpinnerScheduler {
         for (const entry of entries) {
           if (!this.isCurrent(entry)) continue;
           if (entry.nextDueAt <= now) {
-            entry.advance();
+            try {
+              entry.advance();
+            } catch (error) {
+              errors.push(error);
+            }
             advanced = true;
             if (!this.isCurrent(entry)) continue;
             entry.nextDueAt = now + entry.interval;
@@ -179,6 +188,11 @@ export class SpinnerScheduler {
     if (advanced) this.lastWakeAt = now;
     this.compactIfNeeded();
     this.armNext();
+
+    if (errors.length === 1) throw errors[0];
+    if (errors.length > 1) {
+      throw new AggregateError(errors, "Multiple spinner callbacks failed");
+    }
   }
 
   private isCurrent(registration: ScheduledSpinner): boolean {
