@@ -766,7 +766,11 @@ describe("shared spinner scheduler", () => {
     clock.callbacks[0]?.();
 
     expect(requestRender).toHaveBeenCalledTimes(1);
-    expect(clock.delays.at(-1)).toBe(80);
+    expect(clock.delays.at(-1)).toBe(60);
+    clock.advance(59);
+    expect(requestRender).toHaveBeenCalledTimes(1);
+    clock.advance(1);
+    expect(requestRender).toHaveBeenCalledTimes(2);
   });
 
   it("does not consume the frame budget when a timer fires early", () => {

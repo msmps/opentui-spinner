@@ -214,6 +214,15 @@ wake-ups are globally capped at 60 FPS, so staggered spinners can be delayed and
 run below their configured rate. Invisible spinners are suspended until shown
 and do not advance frames or request renders while hidden.
 
+The scheduler aligns deadlines to a shared phase so compatible intervals such
+as 40ms and 80ms can update in the same wake-up, even when started at different
+times. Starting, showing, or rescheduling a spinner still waits its interval
+before advancing, subject to the global wake-up limit. Later frames join the
+shared phase; phase alignment can shorten or lengthen a frame interval. Late
+timers advance each spinner only once instead of catching up missed frames.
+There is at least half an interval between advances, and the global 60 FPS
+wake-up limit still applies.
+
 ## Performance Benchmark
 
 Run the calibrated scheduler benchmark:

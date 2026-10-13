@@ -49,6 +49,7 @@ export class SpinnerScheduler {
   private timerDueAt = 0;
   private generation = 0;
   private lastWakeAt = Number.NEGATIVE_INFINITY;
+  private epoch = 0;
   private clock: SpinnerSchedulerClock;
 
   public constructor(
@@ -70,10 +71,13 @@ export class SpinnerScheduler {
   public start(spinner: object, interval: number, advance: () => void): void {
     if (this.active.has(spinner)) return;
 
+    const now = this.clock.now();
+    if (this.active.size === 0) this.epoch = now;
+
     const registration = {
       spinner,
       interval,
-      nextDueAt: this.clock.now() + interval,
+      nextDueAt: now + interval,
       advance,
     };
     this.active.set(spinner, registration);
@@ -85,10 +89,13 @@ export class SpinnerScheduler {
     const registration = this.active.get(spinner);
     if (!registration) return;
 
+    const now = this.clock.now();
+    if (this.active.size === 1) this.epoch = now;
+
     const replacement = {
       spinner,
       interval,
-      nextDueAt: this.clock.now() + interval,
+      nextDueAt: now + interval,
       advance: registration.advance,
     };
     this.active.set(spinner, replacement);
@@ -102,6 +109,19 @@ export class SpinnerScheduler {
 
     this.compactIfNeeded();
     this.armNext();
+  }
+
+  private deadlineTolerance(time: number): number {
+    // Harmonic deadlines can differ by a few ULPs at large clock values.
+    return (
+      Number.EPSILON * Math.max(1, Math.abs(time), Math.abs(this.epoch)) * 4
+    );
+  }
+
+  private alignDeadline(notBefore: number, interval: number): number {
+    const tolerance = this.deadlineTolerance(notBefore);
+    const step = Math.ceil((notBefore - this.epoch - tolerance) / interval);
+    return Math.max(notBefore, this.epoch + step * interval);
   }
 
   private armNext(): void {
@@ -145,12 +165,13 @@ export class SpinnerScheduler {
     this.clock.clearInterval(timer);
 
     const now = this.clock.now();
+    const dueBefore = now + this.deadlineTolerance(now);
     this.discardStaleRoots();
     let advanced = false;
     let dueCount = 0;
     const errors: unknown[] = [];
 
-    while (this.heap[0] && this.heap[0].nextDueAt <= now) {
+    while (this.heap[0] && this.heap[0].nextDueAt <= dueBefore) {
       const registration = this.pop();
       if (!registration || !this.isCurrent(registration)) continue;
 
@@ -163,7 +184,11 @@ export class SpinnerScheduler {
 
       if (!this.isCurrent(registration)) continue;
 
-      registration.nextDueAt = now + registration.interval;
+      // Rejoin the shared phase after jitter, without a short catch-up frame.
+      registration.nextDueAt = this.alignDeadline(
+        now + registration.interval / 2,
+        registration.interval,
+      );
       this.push(registration);
 
       dueCount++;
@@ -172,7 +197,7 @@ export class SpinnerScheduler {
         this.heap = [];
         for (const entry of entries) {
           if (!this.isCurrent(entry)) continue;
-          if (entry.nextDueAt <= now) {
+          if (entry.nextDueAt <= dueBefore) {
             try {
               entry.advance();
             } catch (error) {
@@ -180,7 +205,10 @@ export class SpinnerScheduler {
             }
             advanced = true;
             if (!this.isCurrent(entry)) continue;
-            entry.nextDueAt = now + entry.interval;
+            entry.nextDueAt = this.alignDeadline(
+              now + entry.interval / 2,
+              entry.interval,
+            );
           }
           this.heap.push(entry);
         }
